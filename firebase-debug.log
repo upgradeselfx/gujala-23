@@ -1,0 +1,39 @@
+[debug] [2026-06-03T11:25:23.477Z] ----------------------------------------------------------------------
+[debug] [2026-06-03T11:25:23.481Z] Command:       /usr/bin/node /usr/local/bin/firebase login
+[debug] [2026-06-03T11:25:23.482Z] CLI Version:   15.19.0
+[debug] [2026-06-03T11:25:23.482Z] Platform:      linux
+[debug] [2026-06-03T11:25:23.482Z] Node Version:  v20.19.2
+[debug] [2026-06-03T11:25:23.482Z] Time:          Wed Jun 03 2026 18:25:23 GMT+0700 (Western Indonesia Time)
+[debug] [2026-06-03T11:25:23.483Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-06-03T11:25:23.488Z] >>> [apiv2][query] GET https://firebase-public.firebaseio.com/cli.json [none]
+[info] i  The Firebase CLI’s MCP server feature can optionally make use of Gemini in Firebase. Learn more about Gemini in Firebase and how it uses your data: https://firebase.google.com/docs/gemini-in-firebase#how-gemini-in-firebase-uses-your-data 
+[debug] [2026-06-03T11:25:24.882Z] <<< [apiv2][status] GET https://firebase-public.firebaseio.com/cli.json 200
+[debug] [2026-06-03T11:25:24.883Z] <<< [apiv2][body] GET https://firebase-public.firebaseio.com/cli.json {"cloudBuildErrorAfter":1594252800000,"cloudBuildWarnAfter":1590019200000,"defaultNode10After":1594252800000,"minVersion":"3.0.5","node8DeploysDisabledAfter":1613390400000,"node8RuntimeDisabledAfter":1615809600000,"node8WarnAfter":1600128000000}
+[info] 
+[info] i  Firebase optionally collects CLI and Emulator Suite usage and error reporting information to help improve our products. Data is collected in accordance with Google's privacy policy (https://policies.google.com/privacy) and is not used to identify you. 
+[info] 
+[info] i  To change your preferences at any time, run `firebase logout` and `firebase login` again. 
+[info] 
+[info] Visit this URL on this device to log in:
+[info] https://accounts.google.com/o/oauth2/auth?client_id=563584335869-fgrhgmd47bqnekij5i8b5pr03ho849e6.apps.googleusercontent.com&scope=email%20openid%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcloudplatformprojects.readonly%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Ffirebase%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcloud-platform&response_type=code&state=435990420&redirect_uri=http%3A%2F%2Flocalhost%3A9005
+[info] 
+[info] Waiting for authentication...
+[debug] [2026-06-03T12:19:50.779Z] ----------------------------------------------------------------------
+[debug] [2026-06-03T12:19:50.783Z] Command:       /usr/bin/node /usr/local/bin/firebase login
+[debug] [2026-06-03T12:19:50.784Z] CLI Version:   15.19.0
+[debug] [2026-06-03T12:19:50.784Z] Platform:      linux
+[debug] [2026-06-03T12:19:50.785Z] Node Version:  v20.19.2
+[debug] [2026-06-03T12:19:50.785Z] Time:          Wed Jun 03 2026 19:19:50 GMT+0700 (Western Indonesia Time)
+[debug] [2026-06-03T12:19:50.785Z] ----------------------------------------------------------------------
+[debug] 
+[info] i  The Firebase CLI’s MCP server feature can optionally make use of Gemini in Firebase. Learn more about Gemini in Firebase and how it uses your data: https://firebase.google.com/docs/gemini-in-firebase#how-gemini-in-firebase-uses-your-data 
+[info] 
+[info] i  Firebase optionally collects CLI and Emulator Suite usage and error reporting information to help improve our products. Data is collected in accordance with Google's privacy policy (https://policies.google.com/privacy) and is not used to identify you. 
+[info] 
+[info] i  To change your preferences at any time, run `firebase logout` and `firebase login` again. 
+[info] 
+[info] Visit this URL on this device to log in:
+[info] https://accounts.google.com/o/oauth2/auth?client_id=563584335869-fgrhgmd47bqnekij5i8b5pr03ho849e6.apps.googleusercontent.com&scope=email%20openid%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcloudplatformprojects.readonly%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Ffirebase%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcloud-platform&response_type=code&state=881316079&redirect_uri=http%3A%2F%2Flocalhost%3A9006
+[info] 
+[info] Waiting for authentication...
