@@ -38,6 +38,15 @@ type CashBulanan = {
   tanggalBayar?: Date;
 };
 
+// Generate nama bulan
+const getNamaBulan = (bulan: number) => {
+  const bulanList = [
+    'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+  ];
+  return bulanList[bulan - 1];
+};
+
 export default function CashBulananPage() {
   const { user, userData } = useAuth();
   const [anggota, setAnggota] = useState<Anggota[]>([]);
