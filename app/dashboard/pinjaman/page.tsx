@@ -15,10 +15,9 @@ import {
   doc,
   getDoc,
   Timestamp,
-  writeBatch
 } from 'firebase/firestore';
 import toast, { Toaster } from 'react-hot-toast';
-import { HandCoins, Plus, Eye, RefreshCw, CheckCircle, Clock } from 'lucide-react';
+import { HandCoins, Plus, Eye, RefreshCw, CheckCircle, Clock, XCircle } from 'lucide-react';
 
 type Pinjaman = {
   id: string;
@@ -34,6 +33,8 @@ type Pinjaman = {
   diajukanPada: Date;
   disetujuiPada?: Date;
   lunasPada?: Date;
+  ditolakPada?: Date;
+  alasanTolak?: string;
 };
 
 type Anggota = {
@@ -47,13 +48,14 @@ export default function PinjamanPage() {
   const [pinjaman, setPinjaman] = useState<Pinjaman[]>([]);
   const [anggota, setAnggota] = useState<Anggota[]>([]);
   const [loading, setLoading] = useState(true);
-  const [modalOpen, setModalOpen] = useState<'ajukan' | 'bayar' | 'setujui' | null>(null);
+  const [modalOpen, setModalOpen] = useState<'ajukan' | 'bayar' | 'setujui' | 'tolak' | null>(null);
   const [selectedPinjaman, setSelectedPinjaman] = useState<Pinjaman | null>(null);
   const [formData, setFormData] = useState({
     jumlah: '',
     tenor: '',
   });
   const [bayarAmount, setBayarAmount] = useState('');
+  const [alasanTolak, setAlasanTolak] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>('all');
 
@@ -118,6 +120,8 @@ export default function PinjamanPage() {
           diajukanPada: p.diajukanPada?.toDate() || new Date(),
           disetujuiPada: p.disetujuiPada?.toDate(),
           lunasPada: p.lunasPada?.toDate(),
+          ditolakPada: p.ditolakPada?.toDate(),
+          alasanTolak: p.alasanTolak,
         });
       }
       setPinjaman(data);
@@ -138,7 +142,7 @@ export default function PinjamanPage() {
 
   // Hitung total pinjaman dengan bunga flat 5%
   const hitungTotal = (jumlah: number, tenor: number) => {
-    const bunga = jumlah * 0.05; // 5% flat //(0.010 <-- 10%)
+    const bunga = jumlah * 0.05;
     const total = jumlah + bunga;
     const angsuranPerBulan = total / tenor;
     return { total, angsuranPerBulan, bunga };
@@ -210,6 +214,31 @@ export default function PinjamanPage() {
     }
   };
 
+  // Tolak pinjaman (hanya pengelola)
+  const handleTolak = async () => {
+    if (!selectedPinjaman) return;
+    setSubmitting(true);
+    try {
+      const pinjamanRef = doc(db, 'pinjaman', selectedPinjaman.id);
+      await updateDoc(pinjamanRef, {
+        status: 'ditolak',
+        ditolakPada: Timestamp.now(),
+        alasanTolak: alasanTolak || 'Tidak disetujui oleh pengelola',
+      });
+
+      toast.success('Pinjaman ditolak');
+      setModalOpen(null);
+      setSelectedPinjaman(null);
+      setAlasanTolak('');
+      fetchPinjaman();
+    } catch (error) {
+      console.error(error);
+      toast.error('Gagal menolak pinjaman');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   // Bayar angsuran
   const handleBayar = async () => {
     if (!selectedPinjaman) return;
@@ -219,16 +248,15 @@ export default function PinjamanPage() {
       return;
     }
 
+    if (bayarNum > selectedPinjaman.sisa) {
+      toast.error('Jumlah bayar melebihi sisa pinjaman');
+      return;
+    }
+
     setSubmitting(true);
     try {
       const pinjamanRef = doc(db, 'pinjaman', selectedPinjaman.id);
       let newSisa = selectedPinjaman.sisa - bayarNum;
-
-      if (newSisa < 0) {
-        toast.error('Jumlah bayar melebihi sisa pinjaman');
-        setSubmitting(false);
-        return;
-      }
 
       const updateData: any = {
         sisa: newSisa,
@@ -267,13 +295,13 @@ export default function PinjamanPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
-        return <span className="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">Menunggu</span>;
+        return <span className="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 flex items-center gap-1"><Clock size={12} /> Menunggu</span>;
       case 'aktif':
-        return <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">Aktif</span>;
+        return <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 flex items-center gap-1"><CheckCircle size={12} /> Aktif</span>;
       case 'lunas':
-        return <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">Lunas</span>;
+        return <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 flex items-center gap-1"><CheckCircle size={12} /> Lunas</span>;
       case 'ditolak':
-        return <span className="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">Ditolak</span>;
+        return <span className="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 flex items-center gap-1"><XCircle size={12} /> Ditolak</span>;
       default:
         return null;
     }
@@ -318,8 +346,8 @@ export default function PinjamanPage() {
       </div>
 
       {/* Filter Status */}
-      <div className="flex gap-2 mb-4">
-        {['all', 'pending', 'aktif', 'lunas'].map((status) => (
+      <div className="flex gap-2 mb-4 flex-wrap">
+        {['all', 'pending', 'aktif', 'lunas', 'ditolak'].map((status) => (
           <button
             key={status}
             onClick={() => setFilterStatus(status)}
@@ -329,7 +357,7 @@ export default function PinjamanPage() {
                 : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200'
             }`}
           >
-            {status === 'all' ? 'Semua' : status === 'pending' ? 'Menunggu' : status === 'aktif' ? 'Aktif' : 'Lunas'}
+            {status === 'all' ? 'Semua' : status === 'pending' ? 'Menunggu' : status === 'aktif' ? 'Aktif' : status === 'lunas' ? 'Lunas' : 'Ditolak'}
           </button>
         ))}
       </div>
@@ -370,6 +398,9 @@ export default function PinjamanPage() {
                   <p className="text-xs text-gray-400">
                     Tenor: {p.tenor} bulan | Angsuran: Rp {p.angsuranPerBulan.toLocaleString('id-ID')}/bulan
                   </p>
+                  {p.status === 'ditolak' && p.alasanTolak && (
+                    <p className="text-xs text-red-500 mt-1">Alasan: {p.alasanTolak}</p>
+                  )}
                 </div>
                 {getStatusBadge(p.status)}
               </div>
@@ -381,8 +412,8 @@ export default function PinjamanPage() {
                 </div>
                 <div>
                   <p className="text-gray-500">Sisa</p>
-                  <p className={`font-medium ${p.sisa > 0 ? 'text-orange-600' : 'text-green-600'}`}>
-                    Rp {p.sisa.toLocaleString('id-ID')}
+                  <p className={`font-medium ${p.sisa > 0 && p.status !== 'ditolak' ? 'text-orange-600' : 'text-green-600'}`}>
+                    {p.status === 'ditolak' ? 'Ditolak' : `Rp ${p.sisa.toLocaleString('id-ID')}`}
                   </p>
                 </div>
                 <div>
@@ -391,17 +422,28 @@ export default function PinjamanPage() {
                 </div>
               </div>
 
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 {isPengelola && p.status === 'pending' && (
-                  <button
-                    onClick={() => {
-                      setSelectedPinjaman(p);
-                      setModalOpen('setujui');
-                    }}
-                    className="flex-1 px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700"
-                  >
-                    Setujui
-                  </button>
+                  <>
+                    <button
+                      onClick={() => {
+                        setSelectedPinjaman(p);
+                        setModalOpen('setujui');
+                      }}
+                      className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700"
+                    >
+                      Setujui
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSelectedPinjaman(p);
+                        setModalOpen('tolak');
+                      }}
+                      className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700"
+                    >
+                      Tolak
+                    </button>
+                  </>
                 )}
                 {p.status === 'aktif' && (
                   <button
@@ -410,7 +452,7 @@ export default function PinjamanPage() {
                       setModalOpen('bayar');
                       setBayarAmount('');
                     }}
-                    className="flex-1 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700"
+                    className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700"
                   >
                     Bayar Angsuran
                   </button>
@@ -512,6 +554,46 @@ export default function PinjamanPage() {
                 className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
               >
                 {submitting ? 'Memproses...' : 'Setujui'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Tolak Pinjaman (Pengelola) */}
+      {modalOpen === 'tolak' && selectedPinjaman && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md p-6">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Tolak Pinjaman</h2>
+            <div className="space-y-3 mb-4">
+              <p><strong>Peminjam:</strong> {selectedPinjaman.userNama}</p>
+              <p><strong>Jumlah:</strong> Rp {selectedPinjaman.jumlah.toLocaleString('id-ID')}</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Alasan Penolakan (Opsional)
+              </label>
+              <textarea
+                value={alasanTolak}
+                onChange={(e) => setAlasanTolak(e.target.value)}
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700"
+                placeholder="Misal: Data tidak lengkap, tidak memenuhi syarat..."
+              />
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setModalOpen(null)}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700"
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleTolak}
+                disabled={submitting}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+              >
+                {submitting ? 'Memproses...' : 'Tolak'}
               </button>
             </div>
           </div>
