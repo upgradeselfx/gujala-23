@@ -147,106 +147,108 @@ export default function ArisanPage() {
 
   // Buat sesi arisan baru
   const handleBuatSesi = async () => {
-    if (!isPengelola) return;
-    
-    if (cekSesiExist()) {
-      toast.error(`Sesi arisan untuk ${getNamaBulan(formData.bulan)} ${formData.tahun} sudah ada`);
-      return;
-    }
+  if (!isPengelola) return;
 
-    if (!pemenangTerpilih) {
-      toast.error('Pilih pemenang terlebih dahulu');
-      return;
-    }
+  if (cekSesiExist()) {
+    toast.error(`Sesi arisan untuk ${getNamaBulan(formData.bulan)} ${formData.tahun} sudah ada`);
+    return;
+  }
 
-    const pemenang = anggota.find(a => a.uid === pemenangTerpilih);
-    if (!pemenang) {
-      toast.error('Pemenang tidak ditemukan');
-      return;
-    }
+  if (!pemenangTerpilih) {
+    toast.error('Pilih pemenang terlebih dahulu');
+    return;
+  }
 
-    if ((pemenang.saldo || 0) < formData.jumlahPotongan) {
-      toast.error(`Saldo ${pemenang.nama} tidak cukup untuk dipotong Rp ${formData.jumlahPotongan.toLocaleString('id-ID')}`);
-      return;
-    }
+  const pemenang = anggota.find(a => a.uid === pemenangTerpilih);
+  if (!pemenang) {
+    toast.error('Pemenang tidak ditemukan');
+    return;
+  }
 
-    setSubmitting(true);
-    try {
-      const batch = writeBatch(db);
+  if ((pemenang.saldo || 0) < formData.jumlahPotongan) {
+    toast.error(`Saldo ${pemenang.nama} tidak cukup untuk dipotong Rp ${formData.jumlahPotongan.toLocaleString('id-ID')}`);
+    return;
+  }
 
-      // 1. Potong saldo pemenang
-      const saldoRef = doc(db, 'saldo', pemenang.uid);
-      const saldoSnap = await getDoc(saldoRef);
-      const currentSaldo = saldoSnap.exists() ? saldoSnap.data().jumlah || 0 : 0;
-      const newSaldo = currentSaldo - formData.jumlahPotongan;
-      batch.update(saldoRef, { jumlah: newSaldo });
+  setSubmitting(true);
+  try {
+    const batch = writeBatch(db);
 
-      // 2. Catat transaksi potongan
-      batch.add(collection(db, 'transaksi_simpanan'), {
-        userId: pemenang.uid,
-        userNama: pemenang.nama,
-        jenis: 'tarik',
-        jumlah: formData.jumlahPotongan,
-        keterangan: `Potongan arisan ${getNamaBulan(formData.bulan)} ${formData.tahun}`,
-        timestamp: Timestamp.now(),
-        saldoSetelah: newSaldo,
-      });
+    // 1. Potong saldo pemenang
+    const saldoRef = doc(db, 'saldo', pemenang.uid);
+    const saldoSnap = await getDoc(saldoRef);
+    const currentSaldo = saldoSnap.exists() ? saldoSnap.data().jumlah || 0 : 0;
+    const newSaldo = currentSaldo - formData.jumlahPotongan;
+    batch.update(saldoRef, { jumlah: newSaldo });
 
-      // 3. Catat ke kas arisan
-      batch.add(collection(db, 'kas_arisan'), {
-        userId: pemenang.uid,
-        userNama: pemenang.nama,
-        bulan: formData.bulan,
-        tahun: formData.tahun,
-        jumlah: formData.jumlahPotongan,
-        createdAt: Timestamp.now(),
-      });
+    // 2. Catat transaksi potongan (pake doc() + batch.set, bukan batch.add)
+    const transaksiRef = doc(collection(db, 'transaksi_simpanan'));
+    batch.set(transaksiRef, {
+      userId: pemenang.uid,
+      userNama: pemenang.nama,
+      jenis: 'tarik',
+      jumlah: formData.jumlahPotongan,
+      keterangan: `Potongan arisan ${getNamaBulan(formData.bulan)} ${formData.tahun}`,
+      timestamp: Timestamp.now(),
+      saldoSetelah: newSaldo,
+    });
 
-      // 4. Buat sesi arisan
-      const periode = `${getNamaBulan(formData.bulan)} ${formData.tahun}`;
-      const arisanRef = doc(collection(db, 'arisan_sesi'));
-      batch.set(arisanRef, {
-        periode,
-        bulan: formData.bulan,
-        tahun: formData.tahun,
-        pemenangId: pemenang.uid,
-        pemenangNama: pemenang.nama,
-        jumlahPotongan: formData.jumlahPotongan,
-        status: 'selesai',
-        createdAt: Timestamp.now(),
-      });
+    // 3. Catat ke kas arisan
+    const kasRef = doc(collection(db, 'kas_arisan'));
+    batch.set(kasRef, {
+      userId: pemenang.uid,
+      userNama: pemenang.nama,
+      bulan: formData.bulan,
+      tahun: formData.tahun,
+      jumlah: formData.jumlahPotongan,
+      createdAt: Timestamp.now(),
+    });
 
-      // 5. Buat pengumuman otomatis
-      const pengumumanRef = doc(collection(db, 'pengumuman'));
-      batch.set(pengumumanRef, {
-        judul: `🎉 Hasil Arisan ${periode}`,
-        isi: `Selamat kepada **${pemenang.nama}** yang terpilih sebagai pemenang arisan periode ${periode} dengan potongan sebesar Rp ${formData.jumlahPotongan.toLocaleString('id-ID')}.\n\nTerima kasih kepada semua anggota yang telah berpartisipasi.`,
-        kategori: 'arisan',
-        createdAt: Timestamp.now(),
-        createdBy: userData?.nama || 'Pengelola',
-      });
+    // 4. Buat sesi arisan
+    const periode = `${getNamaBulan(formData.bulan)} ${formData.tahun}`;
+    const arisanRef = doc(collection(db, 'arisan_sesi'));
+    batch.set(arisanRef, {
+      periode,
+      bulan: formData.bulan,
+      tahun: formData.tahun,
+      pemenangId: pemenang.uid,
+      pemenangNama: pemenang.nama,
+      jumlahPotongan: formData.jumlahPotongan,
+      status: 'selesai',
+      createdAt: Timestamp.now(),
+    });
 
-      await batch.commit();
+    // 5. Buat pengumuman otomatis
+    const pengumumanRef = doc(collection(db, 'pengumuman'));
+    batch.set(pengumumanRef, {
+      judul: `🎉 Hasil Arisan ${periode}`,
+      isi: `Selamat kepada **${pemenang.nama}** yang terpilih sebagai pemenang arisan periode ${periode} dengan potongan sebesar Rp ${formData.jumlahPotongan.toLocaleString('id-ID')}.\n\nTerima kasih kepada semua anggota yang telah berpartisipasi.`,
+      kategori: 'arisan',
+      createdAt: Timestamp.now(),
+      createdBy: userData?.nama || 'Pengelola',
+    });
 
-      toast.success(`Sesi arisan ${periode} berhasil dibuat! Pemenang: ${pemenang.nama}`);
-      setModalOpen(null);
-      setPemenangTerpilih('');
-      setFormData({
-        bulan: new Date().getMonth() + 1,
-        tahun: new Date().getFullYear(),
-        jumlahPotongan: 50000,
-      });
-      
-      // Refresh data
-      await fetchAnggotaWithSaldo();
-      await fetchSesiArisan();
-    } catch (error) {
-      console.error(error);
-      toast.error('Gagal membuat sesi arisan');
-    } finally {
-      setSubmitting(false);
-    }
-  };
+    await batch.commit();
+
+    toast.success(`Sesi arisan ${periode} berhasil dibuat! Pemenang: ${pemenang.nama}`);
+    setModalOpen(null);
+    setPemenangTerpilih('');
+    setFormData({
+      bulan: new Date().getMonth() + 1,
+      tahun: new Date().getFullYear(),
+      jumlahPotongan: 50000,
+    });
+
+    // Refresh data
+    await fetchAnggotaWithSaldo();
+    await fetchSesiArisan();
+  } catch (error) {
+    console.error(error);
+    toast.error('Gagal membuat sesi arisan');
+  } finally {
+    setSubmitting(false);
+  }
+};
 
   const bulanList = [
     { value: 1, nama: 'Januari' },
