@@ -2,9 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { db, auth as firebaseAuth } from '@/app/firebase/client';
-import { collection, getDocs, doc, deleteDoc, updateDoc, setDoc } from 'firebase/firestore';
-import { createUserWithEmailAndPassword, signOut, signInWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
+import { db } from '@/app/firebase/client';
+import { collection, getDocs, doc, deleteDoc, updateDoc } from 'firebase/firestore';
 import toast, { Toaster } from 'react-hot-toast';
 import { Plus, Pencil, Trash2, RefreshCw } from 'lucide-react';
 import AnggotaForm from '@/components/AnggotaForm';
@@ -20,20 +19,15 @@ type Anggota = {
 };
 
 export default function KelolaAnggotaPage() {
-  const { userData, user } = useAuth();
+  const { userData } = useAuth();
   const [anggota, setAnggota] = useState<Anggota[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingAnggota, setEditingAnggota] = useState<Anggota | null>(null);
-  const [adminEmail, setAdminEmail] = useState<string>('');
-  const [adminPassword, setAdminPassword] = useState<string>('');
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     fetchAnggota();
-    // Simpan email admin saat pertama kali load
-    if (user?.email) {
-      setAdminEmail(user.email);
-    }
   }, []);
 
   const fetchAnggota = async () => {
@@ -53,71 +47,42 @@ export default function KelolaAnggotaPage() {
     }
   };
 
+  // TAMBAH ANGGOTA VIA API ROUTE (TANPA LOGOUT)
   const handleTambah = async (data: { nama: string; email: string; noTel: string; alamat: string; password: string }) => {
+    setSubmitting(true);
     try {
-      const password = data.password && data.password.length >= 6 ? data.password : 'anggota123';
-      
-      // Simpan email admin saat ini
-      const currentAdminEmail = user?.email;
-      if (!currentAdminEmail) {
-        toast.error('Sesi pengelola tidak ditemukan');
-        return;
-      }
-
-      // Simpan password admin (dari prompt)
-      const adminPass = prompt('Masukkan password Anda (pengelola) untuk melanjutkan:');
-      if (!adminPass) {
-        toast.error('Password pengelola diperlukan');
-        return;
-      }
-
-      // Buat akun anggota (otomatis login ke akun anggota)
-      const userCredential = await createUserWithEmailAndPassword(firebaseAuth, data.email, password);
-      const uid = userCredential.user.uid;
-
-      // Simpan ke Firestore
-      await setDoc(doc(db, 'users', uid), {
-        uid,
-        nama: data.nama,
-        email: data.email,
-        noTel: data.noTel,
-        alamat: data.alamat,
-        role: 'anggota',
-        createdAt: new Date().toISOString()
+      const response = await fetch('/api/tambah-anggota', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: data.email,
+          password: data.password || 'anggota123',
+          nama: data.nama,
+          noTel: data.noTel,
+          alamat: data.alamat,
+        }),
       });
 
-      // Logout dari akun anggota
-      await signOut(firebaseAuth);
+      const result = await response.json();
       
-      // Tunggu sebentar agar logout selesai
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Login kembali sebagai pengelola
-      await signInWithEmailAndPassword(firebaseAuth, currentAdminEmail, adminPass);
-      
-      // Tunggu login selesai dan refresh data
-      await new Promise(resolve => setTimeout(resolve, 500));
+      if (!response.ok) {
+        throw new Error(result.error || 'Gagal menambahkan anggota');
+      }
 
-      toast.success('Anggota berhasil ditambahkan!');
-      await fetchAnggota();
+      toast.success('Anggota berhasil ditambahkan');
+      fetchAnggota();
       setModalOpen(false);
-      
-      // Refresh halaman untuk memastikan state admin
-      window.location.reload();
     } catch (error: any) {
       console.error(error);
-      if (error.code === 'auth/email-already-in-use') {
+      if (error.message.includes('email-already-exists')) {
         toast.error('Email sudah terdaftar');
-      } else if (error.code === 'auth/weak-password') {
+      } else if (error.message.includes('weak-password')) {
         toast.error('Password terlalu lemah (minimal 6 karakter)');
-      } else if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-        toast.error('Password pengelola salah');
-      } else if (error.code === 'auth/popup-closed-by-user') {
-        toast.error('Proses dibatalkan');
       } else {
-        toast.error('Gagal menambahkan anggota: ' + (error.message || 'Coba lagi'));
+        toast.error(error.message || 'Gagal menambahkan anggota');
       }
-      throw error;
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -133,10 +98,10 @@ export default function KelolaAnggotaPage() {
       toast.success('Anggota berhasil diupdate');
       fetchAnggota();
       setEditingAnggota(null);
+      setModalOpen(false);
     } catch (error) {
       console.error(error);
       toast.error('Gagal mengupdate anggota');
-      throw error;
     }
   };
 
@@ -208,7 +173,7 @@ export default function KelolaAnggotaPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {anggota.map((item) => (
+                {anggota.map((item, idx) => (
                   <tr key={item.uid} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                     <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">{item.nama}</td>
                     <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{item.email}</td>
@@ -216,10 +181,18 @@ export default function KelolaAnggotaPage() {
                     <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{item.alamat || '-'}</td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end gap-2">
-                        <button onClick={() => { setEditingAnggota(item); setModalOpen(true); }} className="p-1 text-blue-600 hover:text-blue-800" title="Edit">
+                        <button 
+                          onClick={() => { setEditingAnggota(item); setModalOpen(true); }} 
+                          className="p-1 text-blue-600 hover:text-blue-800" 
+                          title="Edit"
+                        >
                           <Pencil size={18} />
                         </button>
-                        <button onClick={() => handleHapus(item)} className="p-1 text-red-600 hover:text-red-800" title="Hapus">
+                        <button 
+                          onClick={() => handleHapus(item)} 
+                          className="p-1 text-red-600 hover:text-red-800" 
+                          title="Hapus"
+                        >
                           <Trash2 size={18} />
                         </button>
                       </div>
