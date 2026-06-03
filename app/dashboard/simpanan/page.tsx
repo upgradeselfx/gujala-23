@@ -130,71 +130,72 @@ export default function SimpananPage() {
   }, [user, filterUser]);
 
   const handleSetorTarik = async (jenis: 'setor' | 'tarik') => {
-    const jumlahNum = parseInt(jumlah);
-    if (isNaN(jumlahNum) || jumlahNum <= 0) {
-      toast.error('Masukkan jumlah yang valid');
-      return;
+  const jumlahNum = parseInt(jumlah);
+  if (isNaN(jumlahNum) || jumlahNum <= 0) {
+    toast.error('Masukkan jumlah yang valid');
+    return;
+  }
+
+  if (jenis === 'tarik' && jumlahNum > saldo) {
+    toast.error('Saldo tidak mencukupi');
+    return;
+  }
+
+  setSubmitting(true);
+  try {
+    const targetUserId = isPengelola && filterUser !== 'all' ? filterUser : user!.uid;
+    const saldoRef = doc(db, 'saldo', targetUserId);
+    const saldoSnap = await getDoc(saldoRef);
+    let currentSaldo = 0;
+    if (saldoSnap.exists()) {
+      currentSaldo = saldoSnap.data().jumlah || 0;
     }
 
-    if (jenis === 'tarik' && jumlahNum > saldo) {
-      toast.error('Saldo tidak mencukupi');
-      return;
+    let newSaldo = currentSaldo;
+    if (jenis === 'setor') {
+      newSaldo = currentSaldo + jumlahNum;
+    } else {
+      newSaldo = currentSaldo - jumlahNum;
     }
 
-    setSubmitting(true);
-    try {
-      const targetUserId = isPengelola && filterUser !== 'all' ? filterUser : user!.uid;
-      const saldoRef = doc(db, 'saldo', targetUserId);
-      const saldoSnap = await getDoc(saldoRef);
-      let currentSaldo = 0;
-      if (saldoSnap.exists()) {
-        currentSaldo = saldoSnap.data().jumlah || 0;
-      }
+    // Gunakan batch untuk atomic operation
+    const batch = writeBatch(db);
 
-      let newSaldo = currentSaldo;
-      if (jenis === 'setor') {
-        newSaldo = currentSaldo + jumlahNum;
-      } else {
-        newSaldo = currentSaldo - jumlahNum;
-      }
-
-      // Gunakan batch untuk atomic operation
-      const batch = writeBatch(db);
-
-      // Update saldo
-      if (saldoSnap.exists()) {
-        batch.update(saldoRef, { jumlah: newSaldo });
-      } else {
-        batch.set(saldoRef, { jumlah: newSaldo, userId: targetUserId });
-      }
-
-      // Catat transaksi
-      const userNama = isPengelola && filterUser !== 'all' 
-        ? daftarAnggota.find(a => a.uid === filterUser)?.nama || ''
-        : userData?.nama || '';
-
-      batch.add(collection(db, 'transaksi_simpanan'), {
-        userId: targetUserId,
-        userNama: userNama,
-        jenis: jenis,
-        jumlah: jumlahNum,
-        timestamp: Timestamp.now(),
-        saldoSetelah: newSaldo,
-      });
-
-      await batch.commit();
-
-      toast.success(`${jenis === 'setor' ? 'Setor' : 'Tarik'} saldo berhasil!`);
-      setJumlah('');
-      setModalOpen(null);
-      fetchData();
-    } catch (error) {
-      console.error(error);
-      toast.error('Gagal memproses transaksi');
-    } finally {
-      setSubmitting(false);
+    // Update saldo
+    if (saldoSnap.exists()) {
+      batch.update(saldoRef, { jumlah: newSaldo });
+    } else {
+      batch.set(saldoRef, { jumlah: newSaldo, userId: targetUserId });
     }
-  };
+
+    // Catat transaksi - PERBAIKAN: pake batch.set + doc reference, bukan batch.add
+    const userNama = isPengelola && filterUser !== 'all' 
+      ? daftarAnggota.find(a => a.uid === filterUser)?.nama || ''
+      : userData?.nama || '';
+
+    const transaksiRef = doc(collection(db, 'transaksi_simpanan'));
+    batch.set(transaksiRef, {
+      userId: targetUserId,
+      userNama: userNama,
+      jenis: jenis,
+      jumlah: jumlahNum,
+      timestamp: Timestamp.now(),
+      saldoSetelah: newSaldo,
+    });
+
+    await batch.commit();
+
+    toast.success(`${jenis === 'setor' ? 'Setor' : 'Tarik'} saldo berhasil!`);
+    setJumlah('');
+    setModalOpen(null);
+    fetchData();
+  } catch (error) {
+    console.error(error);
+    toast.error('Gagal memproses transaksi');
+  } finally {
+    setSubmitting(false);
+  }
+};
 
   if (!user) return null;
 
