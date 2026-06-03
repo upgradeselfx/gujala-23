@@ -26,17 +26,10 @@ export default function KelolaAnggotaPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingAnggota, setEditingAnggota] = useState<Anggota | null>(null);
 
-  if (userData?.role !== 'pengelola') {
-    return (
-      <div className="p-6">
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-          <p className="text-red-800 dark:text-red-200">
-            ⚠️ Akses ditolak. Hanya pengelola yang dapat mengakses halaman ini.
-          </p>
-        </div>
-      </div>
-    );
-  }
+  // HOOKS harus dipanggil sebelum conditional return
+  useEffect(() => {
+    fetchAnggota();
+  }, []);
 
   const fetchAnggota = async () => {
     setLoading(true);
@@ -54,10 +47,6 @@ export default function KelolaAnggotaPage() {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetchAnggota();
-  }, []);
 
   const handleTambah = async (data: { nama: string; email: string; noTel: string; alamat: string; password: string }) => {
     try {
@@ -122,6 +111,19 @@ export default function KelolaAnggotaPage() {
     }
   };
 
+  // ROLE CHECK SETELAH HOOKS
+  if (userData?.role !== 'pengelola') {
+    return (
+      <div className="p-6">
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+          <p className="text-red-800 dark:text-red-200">
+            ⚠️ Akses ditolak. Hanya pengelola yang dapat mengakses halaman ini.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6">
       <Toaster position="top-right" />
@@ -180,8 +182,8 @@ export default function KelolaAnggotaPage() {
                           <Trash2 size={18} />
                         </button>
                       </div>
-                    </td>
-                  </tr>
+                     </td>
+                   </tr>
                 ))}
               </tbody>
             </table>
