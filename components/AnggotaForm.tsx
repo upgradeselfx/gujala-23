@@ -9,7 +9,7 @@ type AnggotaFormData = {
   email: string;
   noTel: string;
   alamat: string;
-  password?: string; // tambahan untuk password
+  password: string;
 };
 
 interface AnggotaFormProps {
@@ -96,7 +96,6 @@ export default function AnggotaForm({ isOpen, onClose, onSubmit, initialData, ti
             )}
           </div>
 
-          {/* FIELD PASSWORD (hanya untuk tambah baru, bukan edit) */}
           {!initialData && (
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
