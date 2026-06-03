@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { db } from '@/app/firebase/client';
-import { collection, getDocs, doc, deleteDoc, updateDoc } from 'firebase/firestore';
+import { db, auth as firebaseAuth } from '@/app/firebase/client';
+import { collection, getDocs, doc, deleteDoc, updateDoc, setDoc } from 'firebase/firestore';
+import { createUserWithEmailAndPassword, signOut, signInWithEmailAndPassword } from 'firebase/auth';
 import toast, { Toaster } from 'react-hot-toast';
 import { Plus, Pencil, Trash2, RefreshCw } from 'lucide-react';
 import AnggotaForm from '@/components/AnggotaForm';
@@ -19,7 +20,7 @@ type Anggota = {
 };
 
 export default function KelolaAnggotaPage() {
-  const { userData } = useAuth();
+  const { userData, user } = useAuth();
   const [anggota, setAnggota] = useState<Anggota[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
@@ -47,37 +48,52 @@ export default function KelolaAnggotaPage() {
     }
   };
 
-  // TAMBAH ANGGOTA VIA API ROUTE (TANPA LOGOUT)
   const handleTambah = async (data: { nama: string; email: string; noTel: string; alamat: string; password: string }) => {
     setSubmitting(true);
     try {
-      const response = await fetch('/api/tambah-anggota', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: data.email,
-          password: data.password || 'anggota123',
-          nama: data.nama,
-          noTel: data.noTel,
-          alamat: data.alamat,
-        }),
-      });
-
-      const result = await response.json();
+      const password = data.password && data.password.length >= 6 ? data.password : 'anggota123';
       
-      if (!response.ok) {
-        throw new Error(result.error || 'Gagal menambahkan anggota');
+      const adminEmail = user?.email;
+      if (!adminEmail) {
+        toast.error('Sesi pengelola tidak ditemukan');
+        return;
       }
 
-      toast.success('Anggota berhasil ditambahkan');
-      fetchAnggota();
+      const adminPassword = prompt('Masukkan password Anda (pengelola) untuk melanjutkan:');
+      if (!adminPassword) {
+        toast.error('Password pengelola diperlukan');
+        return;
+      }
+
+      // Buat akun anggota
+      const userCredential = await createUserWithEmailAndPassword(firebaseAuth, data.email, password);
+      const uid = userCredential.user.uid;
+
+      await setDoc(doc(db, 'users', uid), {
+        uid,
+        nama: data.nama,
+        email: data.email,
+        noTel: data.noTel,
+        alamat: data.alamat,
+        role: 'anggota',
+        createdAt: new Date().toISOString()
+      });
+
+      // Logout dari akun anggota
+      await signOut(firebaseAuth);
+      
+      // Login kembali sebagai pengelola
+      await signInWithEmailAndPassword(firebaseAuth, adminEmail, adminPassword);
+
+      toast.success('Anggota berhasil ditambahkan!');
+      await fetchAnggota();
       setModalOpen(false);
     } catch (error: any) {
       console.error(error);
-      if (error.message.includes('email-already-exists')) {
+      if (error.code === 'auth/email-already-in-use') {
         toast.error('Email sudah terdaftar');
-      } else if (error.message.includes('weak-password')) {
-        toast.error('Password terlalu lemah (minimal 6 karakter)');
+      } else if (error.code === 'auth/wrong-password') {
+        toast.error('Password pengelola salah');
       } else {
         toast.error(error.message || 'Gagal menambahkan anggota');
       }
@@ -173,7 +189,7 @@ export default function KelolaAnggotaPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {anggota.map((item, idx) => (
+                {anggota.map((item) => (
                   <tr key={item.uid} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                     <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">{item.nama}</td>
                     <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{item.email}</td>
@@ -181,18 +197,10 @@ export default function KelolaAnggotaPage() {
                     <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{item.alamat || '-'}</td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end gap-2">
-                        <button 
-                          onClick={() => { setEditingAnggota(item); setModalOpen(true); }} 
-                          className="p-1 text-blue-600 hover:text-blue-800" 
-                          title="Edit"
-                        >
+                        <button onClick={() => { setEditingAnggota(item); setModalOpen(true); }} className="p-1 text-blue-600 hover:text-blue-800" title="Edit">
                           <Pencil size={18} />
                         </button>
-                        <button 
-                          onClick={() => handleHapus(item)} 
-                          className="p-1 text-red-600 hover:text-red-800" 
-                          title="Hapus"
-                        >
+                        <button onClick={() => handleHapus(item)} className="p-1 text-red-600 hover:text-red-800" title="Hapus">
                           <Trash2 size={18} />
                         </button>
                       </div>
