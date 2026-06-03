@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { db, auth as firebaseAuth } from '@/app/firebase/client';
 import { collection, getDocs, doc, deleteDoc, updateDoc, setDoc } from 'firebase/firestore';
-import { createUserWithEmailAndPassword, signOut, signInWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signOut, signInWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
 import toast, { Toaster } from 'react-hot-toast';
 import { Plus, Pencil, Trash2, RefreshCw } from 'lucide-react';
 import AnggotaForm from '@/components/AnggotaForm';
@@ -25,9 +25,15 @@ export default function KelolaAnggotaPage() {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingAnggota, setEditingAnggota] = useState<Anggota | null>(null);
+  const [adminEmail, setAdminEmail] = useState<string>('');
+  const [adminPassword, setAdminPassword] = useState<string>('');
 
   useEffect(() => {
     fetchAnggota();
+    // Simpan email admin saat pertama kali load
+    if (user?.email) {
+      setAdminEmail(user.email);
+    }
   }, []);
 
   const fetchAnggota = async () => {
@@ -51,16 +57,16 @@ export default function KelolaAnggotaPage() {
     try {
       const password = data.password && data.password.length >= 6 ? data.password : 'anggota123';
       
-      // Simpan email pengelola saat ini
-      const adminEmail = user?.email;
-      if (!adminEmail) {
+      // Simpan email admin saat ini
+      const currentAdminEmail = user?.email;
+      if (!currentAdminEmail) {
         toast.error('Sesi pengelola tidak ditemukan');
         return;
       }
 
-      // Minta password pengelola untuk login ulang nanti
-      const adminPassword = prompt('Masukkan password Anda (pengelola) untuk melanjutkan:');
-      if (!adminPassword) {
+      // Simpan password admin (dari prompt)
+      const adminPass = prompt('Masukkan password Anda (pengelola) untuk melanjutkan:');
+      if (!adminPass) {
         toast.error('Password pengelola diperlukan');
         return;
       }
@@ -83,12 +89,21 @@ export default function KelolaAnggotaPage() {
       // Logout dari akun anggota
       await signOut(firebaseAuth);
       
+      // Tunggu sebentar agar logout selesai
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       // Login kembali sebagai pengelola
-      await signInWithEmailAndPassword(firebaseAuth, adminEmail, adminPassword);
+      await signInWithEmailAndPassword(firebaseAuth, currentAdminEmail, adminPass);
+      
+      // Tunggu login selesai dan refresh data
+      await new Promise(resolve => setTimeout(resolve, 500));
 
-      toast.success('Anggota berhasil ditambahkan');
-      fetchAnggota();
+      toast.success('Anggota berhasil ditambahkan!');
+      await fetchAnggota();
       setModalOpen(false);
+      
+      // Refresh halaman untuk memastikan state admin
+      window.location.reload();
     } catch (error: any) {
       console.error(error);
       if (error.code === 'auth/email-already-in-use') {
@@ -100,7 +115,7 @@ export default function KelolaAnggotaPage() {
       } else if (error.code === 'auth/popup-closed-by-user') {
         toast.error('Proses dibatalkan');
       } else {
-        toast.error('Gagal menambahkan anggota: ' + error.message);
+        toast.error('Gagal menambahkan anggota: ' + (error.message || 'Coba lagi'));
       }
       throw error;
     }
