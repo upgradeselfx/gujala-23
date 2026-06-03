@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { db } from '@/app/firebase/client';
-import { collection, getDocs, query, where, doc, getDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { LayoutDashboard, Users, Wallet, HandCoins } from 'lucide-react';
 
 type SummaryData = {
@@ -21,6 +21,8 @@ export default function DashboardPage() {
     totalAnggota: 0,
     totalSimpanan: 0,
     totalPinjamanAktif: 0,
+    simpananSaya: 0,
+    pinjamanSaya: 0,
   });
   const [loading, setLoading] = useState(true);
 
@@ -29,60 +31,76 @@ export default function DashboardPage() {
       if (!user) return;
 
       try {
-        // Ambil semua anggota
-        const anggotaSnapshot = await getDocs(collection(db, 'users'));
-        const totalAnggota = anggotaSnapshot.size;
+        // 1. Ambil saldo dari collection 'saldo'
+        let saldoSaya = 0;
+        const saldoRef = doc(db, 'saldo', user.uid);
+        const saldoSnap = await getDoc(saldoRef);
+        if (saldoSnap.exists()) {
+          saldoSaya = saldoSnap.data().jumlah || 0;
+        } else {
+          // Coba hitung dari transaksi simpanan (fallback)
+          const transaksiQuery = query(
+            collection(db, 'transaksi_simpanan'),
+            where('userId', '==', user.uid)
+          );
+          const transaksiSnap = await getDocs(transaksiQuery);
+          let setor = 0, tarik = 0;
+          transaksiSnap.forEach(doc => {
+            const data = doc.data();
+            if (data.jenis === 'setor') setor += data.jumlah;
+            if (data.jenis === 'tarik') tarik += data.jumlah;
+          });
+          saldoSaya = setor - tarik;
+        }
 
-        // Ambil semua transaksi simpanan
-        const simpananSnapshot = await getDocs(collection(db, 'simpanan'));
-        let totalSimpanan = 0;
-        let simpananSaya = 0;
-
-        simpananSnapshot.forEach((doc) => {
-          const data = doc.data();
-          if (data.jenis === 'setor') {
-            totalSimpanan += data.jumlah;
-            if (data.userId === user.uid) {
-              simpananSaya += data.jumlah;
-            }
-          } else if (data.jenis === 'tarik' && data.status === 'sukses') {
-            totalSimpanan -= data.jumlah;
-            if (data.userId === user.uid) {
-              simpananSaya -= data.jumlah;
-            }
-          }
-        });
-
-        // Ambil semua pinjaman aktif
-        const pinjamanQuery = query(collection(db, 'pinjaman'), where('status', '==', 'aktif'));
-        const pinjamanSnapshot = await getDocs(pinjamanQuery);
-        let totalPinjamanAktif = 0;
+        // 2. Ambil sisa pinjaman
         let pinjamanSaya = 0;
-
-        pinjamanSnapshot.forEach((doc) => {
+        const pinjamanQuery = query(
+          collection(db, 'pinjaman'),
+          where('userId', '==', user.uid),
+          where('status', 'in', ['aktif', 'pending'])
+        );
+        const pinjamanSnap = await getDocs(pinjamanQuery);
+        pinjamanSnap.forEach(doc => {
           const data = doc.data();
-          totalPinjamanAktif += data.sisa || data.jumlah;
-          if (data.userId === user.uid) {
-            pinjamanSaya += data.sisa || data.jumlah;
-          }
+          pinjamanSaya += data.sisa || data.jumlah || 0;
         });
+
+        // 3. Total anggota & total simpanan (hanya pengelola)
+        let totalAnggota = 0;
+        let totalSimpanan = 0;
+
+        if (userData?.role === 'pengelola') {
+          const anggotaSnap = await getDocs(collection(db, 'users'));
+          totalAnggota = anggotaSnap.size;
+
+          const simpananSnap = await getDocs(collection(db, 'transaksi_simpanan'));
+          let totalSetor = 0, totalTarik = 0;
+          simpananSnap.forEach(doc => {
+            const data = doc.data();
+            if (data.jenis === 'setor') totalSetor += data.jumlah;
+            if (data.jenis === 'tarik') totalTarik += data.jumlah;
+          });
+          totalSimpanan = totalSetor - totalTarik;
+        }
 
         setSummary({
           totalAnggota,
           totalSimpanan,
-          totalPinjamanAktif,
-          simpananSaya,
-          pinjamanSaya,
+          totalPinjamanAktif: 0,
+          simpananSaya: saldoSaya,
+          pinjamanSaya: pinjamanSaya,
         });
       } catch (error) {
-        console.error('Error fetching summary:', error);
+        console.error(error);
+        // Tetap tampilkan 0, jangan error
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-  }, [user]);
+  }, [user, userData]);
 
   if (loading) {
     return (
@@ -96,93 +114,74 @@ export default function DashboardPage() {
 
   return (
     <div className="p-6">
-      {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
         <p className="text-gray-500 dark:text-gray-400 mt-1">
-          Selamat datang kembali, {userData?.nama}
+          Selamat datang kembali, {userData?.nama || 'User'}
         </p>
       </div>
 
-      {/* Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Card Total Anggota (hanya pengelola) */}
         {isPengelola && (
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Total Anggota</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
-                  {summary.totalAnggota}
-                </p>
+                <p className="text-sm text-gray-500">Total Anggota</p>
+                <p className="text-2xl font-bold mt-1">{summary.totalAnggota}</p>
               </div>
-              <div className="bg-blue-100 dark:bg-blue-900/30 p-3 rounded-full">
-                <Users className="text-blue-600 dark:text-blue-400" size={24} />
+              <div className="bg-blue-100 p-3 rounded-full">
+                <Users className="text-blue-600" size={24} />
               </div>
             </div>
           </div>
         )}
 
-        {/* Card Total Simpanan (pengelola) / Simpanan Saya (anggota) */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              <p className="text-sm text-gray-500">
                 {isPengelola ? 'Total Simpanan' : 'Saldo Saya'}
               </p>
-              <p className="text-2xl font-bold text-green-600 dark:text-green-400 mt-1">
+              <p className="text-2xl font-bold text-green-600 mt-1">
                 Rp {(isPengelola ? summary.totalSimpanan : summary.simpananSaya || 0).toLocaleString('id-ID')}
               </p>
             </div>
-            <div className="bg-green-100 dark:bg-green-900/30 p-3 rounded-full">
-              <Wallet className="text-green-600 dark:text-green-400" size={24} />
+            <div className="bg-green-100 p-3 rounded-full">
+              <Wallet className="text-green-600" size={24} />
             </div>
           </div>
         </div>
 
-        {/* Card Total Pinjaman Aktif (pengelola) / Pinjaman Saya (anggota) */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              <p className="text-sm text-gray-500">
                 {isPengelola ? 'Total Pinjaman Aktif' : 'Sisa Pinjaman Saya'}
               </p>
-              <p className="text-2xl font-bold text-orange-600 dark:text-orange-400 mt-1">
+              <p className="text-2xl font-bold text-orange-600 mt-1">
                 Rp {(isPengelola ? summary.totalPinjamanAktif : summary.pinjamanSaya || 0).toLocaleString('id-ID')}
               </p>
             </div>
-            <div className="bg-orange-100 dark:bg-orange-900/30 p-3 rounded-full">
-              <HandCoins className="text-orange-600 dark:text-orange-400" size={24} />
+            <div className="bg-orange-100 p-3 rounded-full">
+              <HandCoins className="text-orange-600" size={24} />
             </div>
           </div>
         </div>
 
-        {/* Card Kosong untuk pengelola (atau tambahan lain) */}
         {!isPengelola && (
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Status</p>
-                <p className="text-lg font-medium text-gray-900 dark:text-white mt-1">
-                  Anggota Aktif
-                </p>
+                <p className="text-sm text-gray-500">Status</p>
+                <p className="text-lg font-medium mt-1">Anggota Aktif</p>
               </div>
-              <div className="bg-purple-100 dark:bg-purple-900/30 p-3 rounded-full">
-                <LayoutDashboard className="text-purple-600 dark:text-purple-400" size={24} />
+              <div className="bg-purple-100 p-3 rounded-full">
+                <LayoutDashboard className="text-purple-600" size={24} />
               </div>
             </div>
           </div>
         )}
       </div>
-
-      {/* Pesan jika belum ada data (opsional) */}
-      {isPengelola && summary.totalAnggota === 0 && (
-        <div className="mt-8 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-          <p className="text-yellow-800 dark:text-yellow-200 text-sm">
-            📌 Belum ada data. Silakan tambahkan anggota terlebih dahulu di menu Kelola Anggota.
-          </p>
-        </div>
-      )}
     </div>
   );
 }
