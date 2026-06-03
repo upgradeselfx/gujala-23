@@ -1,4 +1,3 @@
-// app/dashboard/page.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -12,7 +11,6 @@ import {
   HandCoins, 
   TrendingUp, 
   PieChart,
-  Download,
   Calendar
 } from 'lucide-react';
 import {
@@ -69,19 +67,16 @@ export default function DashboardPage() {
 
   const isPengelola = userData?.role === 'pengelola';
 
-  // Ambil data dashboard
   const fetchData = async () => {
     if (!user) return;
 
     try {
-      // 1. Ambil saldo dari collection 'saldo'
       let saldoSaya = 0;
       const saldoRef = doc(db, 'saldo', user.uid);
       const saldoSnap = await getDoc(saldoRef);
       if (saldoSnap.exists()) {
         saldoSaya = saldoSnap.data().jumlah || 0;
       } else {
-        // Fallback: hitung dari transaksi simpanan
         const transaksiQuery = query(
           collection(db, 'transaksi_simpanan'),
           where('userId', '==', user.uid)
@@ -96,7 +91,6 @@ export default function DashboardPage() {
         saldoSaya = setor - tarik;
       }
 
-      // 2. Ambil sisa pinjaman
       let pinjamanSaya = 0;
       const pinjamanQuery = query(
         collection(db, 'pinjaman'),
@@ -109,7 +103,6 @@ export default function DashboardPage() {
         pinjamanSaya += data.sisa || data.jumlah || 0;
       });
 
-      // 3. Total anggota & total simpanan & chart data (hanya pengelola)
       let totalAnggota = 0;
       let totalSimpanan = 0;
       let totalPinjamanAktif = 0;
@@ -118,11 +111,9 @@ export default function DashboardPage() {
       let monthlyDataTemp: MonthlyData[] = [];
 
       if (isPengelola) {
-        // Total anggota
         const anggotaSnap = await getDocs(collection(db, 'users'));
         totalAnggota = anggotaSnap.size;
 
-        // Total simpanan & data chart per anggota
         const simpananSnap = await getDocs(collection(db, 'transaksi_simpanan'));
         let totalSetor = 0, totalTarik = 0;
         const anggotaMap = new Map<string, { setor: number; tarik: number; nama: string }>();
@@ -143,19 +134,17 @@ export default function DashboardPage() {
         }
         totalSimpanan = totalSetor - totalTarik;
 
-        // Chart data top 5 anggota
         const topAnggota = Array.from(anggotaMap.entries())
           .map(([id, value]) => ({ id, nama: value.nama || id, saldo: value.setor - value.tarik }))
           .sort((a, b) => b.saldo - a.saldo)
           .slice(0, 5);
         
-        chartDataTemp = topAnggota.map((a, idx) => ({
+        chartDataTemp = topAnggota.map((a) => ({
           name: a.nama.length > 10 ? a.nama.substring(0, 10) + '...' : a.nama,
           simpanan: a.saldo,
           pinjaman: 0,
         }));
 
-        // Total pinjaman aktif
         const pinjamanAktifQuery = query(
           collection(db, 'pinjaman'),
           where('status', '==', 'aktif')
@@ -165,13 +154,11 @@ export default function DashboardPage() {
           totalPinjamanAktif += doc.data().sisa || doc.data().jumlah || 0;
         });
 
-        // Total kas arisan
         const kasArisanSnap = await getDocs(collection(db, 'kas_arisan'));
         kasArisanSnap.forEach(doc => {
           totalKasArisan += doc.data().jumlah || 0;
         });
 
-        // Monthly transaksi untuk chart tren
         const monthlyMap = new Map<string, { setor: number; tarik: number }>();
         for (let i = 1; i <= 12; i++) {
           monthlyMap.set(i.toString(), { setor: 0, tarik: 0 });
@@ -242,7 +229,6 @@ export default function DashboardPage() {
 
   return (
     <div className="p-6">
-      {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
         <p className="text-gray-500 dark:text-gray-400 mt-1">
@@ -250,7 +236,6 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      {/* Cards Ringkasan */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         {isPengelola && (
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
@@ -329,10 +314,8 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {/* Grafik untuk Pengelola */}
       {isPengelola && (
         <>
-          {/* Filter Tahun */}
           <div className="flex justify-end mb-4">
             <div className="flex items-center gap-2 bg-white dark:bg-gray-800 rounded-lg px-3 py-2 shadow-sm">
               <Calendar size={16} className="text-gray-500" />
@@ -349,7 +332,6 @@ export default function DashboardPage() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            {/* Tren Simpanan & Pinjaman */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 border border-gray-100 dark:border-gray-700">
               <h3 className="text-md font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                 <TrendingUp size={18} className="text-blue-500" />
@@ -361,7 +343,7 @@ export default function DashboardPage() {
                   <XAxis dataKey="bulan" stroke="#9ca3af" />
                   <YAxis stroke="#9ca3af" />
                   <Tooltip 
-                    formatter={(value: number) => `Rp ${value.toLocaleString('id-ID')}`}
+                    formatter={(value: any) => `Rp ${value?.toLocaleString('id-ID') || 0}`}
                     contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}
                   />
                   <Legend />
@@ -371,7 +353,6 @@ export default function DashboardPage() {
               </ResponsiveContainer>
             </div>
 
-            {/* Komposisi Keuangan */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 border border-gray-100 dark:border-gray-700">
               <h3 className="text-md font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                 <PieChart size={18} className="text-purple-500" />
@@ -384,7 +365,7 @@ export default function DashboardPage() {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    label={({ name, percent }: any) => `${name}: ${(percent * 100).toFixed(0)}%`}
                     outerRadius={80}
                     fill="#8884d8"
                     dataKey="value"
@@ -393,13 +374,12 @@ export default function DashboardPage() {
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value: number) => `Rp ${value.toLocaleString('id-ID')}`} />
+                  <Tooltip formatter={(value: any) => `Rp ${value?.toLocaleString('id-ID') || 0}`} />
                 </RePieChart>
               </ResponsiveContainer>
             </div>
           </div>
 
-          {/* Top 5 Anggota dengan Saldo Tertinggi */}
           {chartData.length > 0 && (
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 border border-gray-100 dark:border-gray-700">
               <h3 className="text-md font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
@@ -411,7 +391,7 @@ export default function DashboardPage() {
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis dataKey="name" stroke="#9ca3af" />
                   <YAxis stroke="#9ca3af" />
-                  <Tooltip formatter={(value: number) => `Rp ${value.toLocaleString('id-ID')}`} />
+                  <Tooltip formatter={(value: any) => `Rp ${value?.toLocaleString('id-ID') || 0}`} />
                   <Bar dataKey="simpanan" fill="#10b981" name="Saldo Simpanan" />
                 </BarChart>
               </ResponsiveContainer>
@@ -420,7 +400,6 @@ export default function DashboardPage() {
         </>
       )}
 
-      {/* Pesan jika belum ada data */}
       {isPengelola && summary.totalAnggota === 0 && (
         <div className="mt-6 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
           <p className="text-yellow-800 dark:text-yellow-200 text-sm">
