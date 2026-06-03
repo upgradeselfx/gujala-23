@@ -13,7 +13,6 @@ import {
   orderBy,
 } from 'firebase/firestore';
 import toast, { Toaster } from 'react-hot-toast';
-import html2pdf from 'html2pdf.js';
 import {
   FileText,
   Wallet,
@@ -22,7 +21,6 @@ import {
   Trophy,
   Download,
   Printer,
-  Users,
 } from 'lucide-react';
 
 type Anggota = {
@@ -86,7 +84,6 @@ export default function LaporanPage() {
 
   const isPengelola = userData?.role === 'pengelola';
 
-  // Ambil daftar anggota
   const fetchAnggota = async () => {
     if (!isPengelola) return;
     try {
@@ -104,7 +101,6 @@ export default function LaporanPage() {
     }
   };
 
-  // Ambil laporan simpanan
   const fetchLaporanSimpanan = async () => {
     try {
       let targetUsers: { uid: string; nama: string }[] = [];
@@ -156,7 +152,6 @@ export default function LaporanPage() {
     }
   };
 
-  // Ambil laporan pinjaman
   const fetchLaporanPinjaman = async () => {
     try {
       let pinjamanQuery;
@@ -209,7 +204,6 @@ export default function LaporanPage() {
     }
   };
 
-  // Ambil laporan cash bulanan
   const fetchLaporanCash = async () => {
     try {
       let cashQuery;
@@ -258,7 +252,6 @@ export default function LaporanPage() {
     }
   };
 
-  // Ambil laporan arisan
   const fetchLaporanArisan = async () => {
     try {
       const arisanQuery = query(
@@ -306,21 +299,6 @@ export default function LaporanPage() {
 
   const handlePrint = () => {
     window.print();
-  };
-
-  const handleExportPDF = () => {
-    const element = document.getElementById('laporan-content');
-    if (!element) return;
-    
-    const opt = {
-      margin: [10, 10, 10, 10],
-      filename: `laporan_${activeTab}_${new Date().toISOString().split('T')[0]}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2 },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
-    };
-    html2pdf().set(opt).from(element).save();
-    toast.success('PDF sedang diproses...');
   };
 
   const handleExportCSV = () => {
@@ -412,7 +390,6 @@ export default function LaporanPage() {
     <div className="p-6">
       <Toaster position="top-right" />
 
-      {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Laporan</h1>
@@ -422,16 +399,12 @@ export default function LaporanPage() {
           <button onClick={handlePrint} className="px-3 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 flex items-center gap-2">
             <Printer size={16} /> Cetak
           </button>
-          <button onClick={handleExportPDF} className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2">
-            <FileText size={16} /> Export PDF
-          </button>
           <button onClick={handleExportCSV} className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2">
             <Download size={16} /> Export CSV
           </button>
         </div>
       </div>
 
-      {/* Tabs */}
       <div className="flex gap-2 mb-6 border-b border-gray-200 dark:border-gray-700 flex-wrap">
         <button onClick={() => setActiveTab('simpanan')} className={`px-4 py-2 flex items-center gap-2 ${activeTab === 'simpanan' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}>
           <Wallet size={16} /> Simpanan
@@ -447,7 +420,6 @@ export default function LaporanPage() {
         </button>
       </div>
 
-      {/* Filter untuk Pengelola */}
       {isPengelola && activeTab !== 'arisan' && (
         <div className="mb-4 flex flex-wrap gap-3 items-center">
           <div>
@@ -477,22 +449,52 @@ export default function LaporanPage() {
       )}
 
       <div id="laporan-content">
-        {/* LAPORAN SIMPANAN */}
         {activeTab === 'simpanan' && (
           <div>
             {isPengelola && selectedAnggota === 'all' && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm"><p className="text-sm text-gray-500">Total Setor</p><p className="text-2xl font-bold text-green-600">Rp {ringkasanSimpanan.totalSetor.toLocaleString('id-ID')}</p></div>
-                <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm"><p className="text-sm text-gray-500">Total Tarik</p><p className="text-2xl font-bold text-orange-600">Rp {ringkasanSimpanan.totalTarik.toLocaleString('id-ID')}</p></div>
-                <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm"><p className="text-sm text-gray-500">Total Saldo</p><p className="text-2xl font-bold text-blue-600">Rp {ringkasanSimpanan.totalSaldo.toLocaleString('id-ID')}</p></div>
+                <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
+                  <p className="text-sm text-gray-500">Total Setor</p>
+                  <p className="text-2xl font-bold text-green-600">Rp {ringkasanSimpanan.totalSetor.toLocaleString('id-ID')}</p>
+                </div>
+                <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
+                  <p className="text-sm text-gray-500">Total Tarik</p>
+                  <p className="text-2xl font-bold text-orange-600">Rp {ringkasanSimpanan.totalTarik.toLocaleString('id-ID')}</p>
+                </div>
+                <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
+                  <p className="text-sm text-gray-500">Total Saldo</p>
+                  <p className="text-2xl font-bold text-blue-600">Rp {ringkasanSimpanan.totalSaldo.toLocaleString('id-ID')}</p>
+                </div>
               </div>
             )}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-gray-50 dark:bg-gray-700"><tr><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">No</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nama</th><th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total Setor</th><th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total Tarik</th><th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Saldo Akhir</th></tr></thead>
+                  <thead className="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">No</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nama</th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total Setor</th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total Tarik</th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Saldo Akhir</th>
+                    </tr>
+                  </thead>
                   <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                    {laporanSimpanan.length === 0 ? <td><td colSpan={5} className="px-6 py-8 text-center text-gray-500">Belum ada data simpanan</td></tr> : laporanSimpanan.map((item, idx) => (<tr key={item.userId}><td className="px-6 py-4 text-sm">{idx + 1}</td><td className="px-6 py-4 text-sm font-medium">{item.userNama}</td><td className="px-6 py-4 text-sm text-right text-green-600">Rp {item.totalSetor.toLocaleString('id-ID')}</td><td className="px-6 py-4 text-sm text-right text-orange-600">Rp {item.totalTarik.toLocaleString('id-ID')}</td><td className="px-6 py-4 text-sm text-right font-medium">Rp {item.saldoAkhir.toLocaleString('id-ID')}</td></tr>))}
+                    {laporanSimpanan.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="px-6 py-8 text-center text-gray-500">Belum ada data simpanan</td>
+                      </tr>
+                    ) : (
+                      laporanSimpanan.map((item, idx) => (
+                        <tr key={item.userId} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                          <td className="px-6 py-4 text-sm text-gray-500">{idx + 1}</td>
+                          <td className="px-6 py-4 text-sm font-medium text-gray-900">{item.userNama}</td>
+                          <td className="px-6 py-4 text-sm text-right text-green-600">Rp {item.totalSetor.toLocaleString('id-ID')}</td>
+                          <td className="px-6 py-4 text-sm text-right text-orange-600">Rp {item.totalTarik.toLocaleString('id-ID')}</td>
+                          <td className="px-6 py-4 text-sm text-right font-medium">Rp {item.saldoAkhir.toLocaleString('id-ID')}</td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -500,23 +502,66 @@ export default function LaporanPage() {
           </div>
         )}
 
-        {/* LAPORAN PINJAMAN */}
         {activeTab === 'pinjaman' && (
           <div>
             {isPengelola && selectedAnggota === 'all' && (
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm"><p className="text-sm text-gray-500">Total Pinjaman</p><p className="text-2xl font-bold text-purple-600">Rp {ringkasanPinjaman.totalPinjaman.toLocaleString('id-ID')}</p></div>
-                <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm"><p className="text-sm text-gray-500">Total Sisa</p><p className="text-2xl font-bold text-orange-600">Rp {ringkasanPinjaman.totalSisa.toLocaleString('id-ID')}</p></div>
-                <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm"><p className="text-sm text-gray-500">Pinjaman Aktif</p><p className="text-2xl font-bold text-blue-600">{ringkasanPinjaman.aktif}</p></div>
-                <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm"><p className="text-sm text-gray-500">Pinjaman Lunas</p><p className="text-2xl font-bold text-green-600">{ringkasanPinjaman.lunas}</p></div>
+                <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
+                  <p className="text-sm text-gray-500">Total Pinjaman</p>
+                  <p className="text-2xl font-bold text-purple-600">Rp {ringkasanPinjaman.totalPinjaman.toLocaleString('id-ID')}</p>
+                </div>
+                <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
+                  <p className="text-sm text-gray-500">Total Sisa</p>
+                  <p className="text-2xl font-bold text-orange-600">Rp {ringkasanPinjaman.totalSisa.toLocaleString('id-ID')}</p>
+                </div>
+                <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
+                  <p className="text-sm text-gray-500">Pinjaman Aktif</p>
+                  <p className="text-2xl font-bold text-blue-600">{ringkasanPinjaman.aktif}</p>
+                </div>
+                <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
+                  <p className="text-sm text-gray-500">Pinjaman Lunas</p>
+                  <p className="text-2xl font-bold text-green-600">{ringkasanPinjaman.lunas}</p>
+                </div>
               </div>
             )}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-gray-50 dark:bg-gray-700"><tr><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">No</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Peminjam</th><th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Jumlah</th><th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Sisa</th><th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Status</th><th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Angsuran/Bulan</th></tr></thead>
+                  <thead className="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">No</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Peminjam</th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Jumlah</th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Sisa</th>
+                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Status</th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Angsuran/Bulan</th>
+                    </tr>
+                  </thead>
                   <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                    {laporanPinjaman.length === 0 ? <tr><td colSpan={6} className="px-6 py-8 text-center text-gray-500">Belum ada data pinjaman</td></tr> : laporanPinjaman.map((item, idx) => (<tr key={item.id}><td className="px-6 py-4 text-sm">{idx + 1}</td><td className="px-6 py-4 text-sm font-medium">{item.userNama}</td><td className="px-6 py-4 text-sm text-right">Rp {item.jumlah.toLocaleString('id-ID')}</td><td className="px-6 py-4 text-sm text-right text-orange-600">Rp {item.sisa.toLocaleString('id-ID')}</td><td className="px-6 py-4 text-center"><span className={`px-2 py-1 text-xs rounded-full ${item.status === 'aktif' ? 'bg-blue-100 text-blue-800' : item.status === 'lunas' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>{item.status === 'aktif' ? 'Aktif' : item.status === 'lunas' ? 'Lunas' : 'Menunggu'}</span></td><td className="px-6 py-4 text-sm text-right">Rp {item.angsuranPerBulan.toLocaleString('id-ID')}</td></tr>))}
+                    {laporanPinjaman.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="px-6 py-8 text-center text-gray-500">Belum ada data pinjaman</td>
+                      </tr>
+                    ) : (
+                      laporanPinjaman.map((item, idx) => (
+                        <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                          <td className="px-6 py-4 text-sm text-gray-500">{idx + 1}</td>
+                          <td className="px-6 py-4 text-sm font-medium text-gray-900">{item.userNama}</td>
+                          <td className="px-6 py-4 text-sm text-right">Rp {item.jumlah.toLocaleString('id-ID')}</td>
+                          <td className="px-6 py-4 text-sm text-right text-orange-600">Rp {item.sisa.toLocaleString('id-ID')}</td>
+                          <td className="px-6 py-4 text-center">
+                            <span className={`px-2 py-1 text-xs rounded-full ${
+                              item.status === 'aktif' ? 'bg-blue-100 text-blue-800' :
+                              item.status === 'lunas' ? 'bg-green-100 text-green-800' :
+                              'bg-yellow-100 text-yellow-800'
+                            }`}>
+                              {item.status === 'aktif' ? 'Aktif' : item.status === 'lunas' ? 'Lunas' : 'Menunggu'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-right">Rp {item.angsuranPerBulan.toLocaleString('id-ID')}</td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -524,22 +569,56 @@ export default function LaporanPage() {
           </div>
         )}
 
-        {/* LAPORAN CASH BULANAN */}
         {activeTab === 'cash' && (
           <div>
             {isPengelola && selectedAnggota === 'all' && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm"><p className="text-sm text-gray-500">Sudah Bayar</p><p className="text-2xl font-bold text-green-600">{ringkasanCash.totalSudahBayar} orang</p></div>
-                <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm"><p className="text-sm text-gray-500">Belum Bayar</p><p className="text-2xl font-bold text-orange-600">{ringkasanCash.totalBelumBayar} orang</p></div>
-                <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm"><p className="text-sm text-gray-500">Terkumpul</p><p className="text-2xl font-bold text-blue-600">Rp {ringkasanCash.totalTerkumpul.toLocaleString('id-ID')}</p></div>
+                <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
+                  <p className="text-sm text-gray-500">Sudah Bayar</p>
+                  <p className="text-2xl font-bold text-green-600">{ringkasanCash.totalSudahBayar} orang</p>
+                </div>
+                <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
+                  <p className="text-sm text-gray-500">Belum Bayar</p>
+                  <p className="text-2xl font-bold text-orange-600">{ringkasanCash.totalBelumBayar} orang</p>
+                </div>
+                <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
+                  <p className="text-sm text-gray-500">Terkumpul</p>
+                  <p className="text-2xl font-bold text-blue-600">Rp {ringkasanCash.totalTerkumpul.toLocaleString('id-ID')}</p>
+                </div>
               </div>
             )}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-gray-50 dark:bg-gray-700"><tr><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">No</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nama</th><th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Jumlah</th><th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Status</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tanggal Bayar</th></tr></thead>
+                  <thead className="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">No</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nama</th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Jumlah</th>
+                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Status</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tanggal Bayar</th>
+                    </tr>
+                  </thead>
                   <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                    {laporanCash.length === 0 ? <tr><td colSpan={5} className="px-6 py-8 text-center text-gray-500">Belum ada data cash bulanan untuk periode ini</td></tr> : laporanCash.map((item, idx) => (<tr key={item.userId}><td className="px-6 py-4 text-sm">{idx + 1}</td><td className="px-6 py-4 text-sm font-medium">{item.userNama}</td><td className="px-6 py-4 text-sm text-right">Rp {item.jumlah.toLocaleString('id-ID')}</td><td className="px-6 py-4 text-center"><span className={`px-2 py-1 text-xs rounded-full ${item.statusBayar === 'lunas' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>{item.statusBayar === 'lunas' ? 'Lunas' : 'Belum'}</span></td><td className="px-6 py-4 text-sm text-gray-500">{item.tanggalBayar?.toLocaleDateString('id-ID') || '-'}</td></tr>))}
+                    {laporanCash.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="px-6 py-8 text-center text-gray-500">Belum ada data cash bulanan untuk periode ini</td>
+                      </tr>
+                    ) : (
+                      laporanCash.map((item, idx) => (
+                        <tr key={item.userId} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                          <td className="px-6 py-4 text-sm text-gray-500">{idx + 1}</td>
+                          <td className="px-6 py-4 text-sm font-medium text-gray-900">{item.userNama}</td>
+                          <td className="px-6 py-4 text-sm text-right">Rp {item.jumlah.toLocaleString('id-ID')}</td>
+                          <td className="px-6 py-4 text-center">
+                            <span className={`px-2 py-1 text-xs rounded-full ${item.statusBayar === 'lunas' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                              {item.statusBayar === 'lunas' ? 'Lunas' : 'Belum'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-500">{item.tanggalBayar?.toLocaleDateString('id-ID') || '-'}</td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -547,11 +626,46 @@ export default function LaporanPage() {
           </div>
         )}
 
-        {/* LAPORAN ARISAN */}
         {activeTab === 'arisan' && (
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
-            <div className="flex items-center gap-2 mb-4"><Trophy size={20} className="text-yellow-500" /><h2 className="text-lg font-semibold">Riwayat Arisan</h2></div>
-            {loading ? <div className="flex justify-center py-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div> : sesiArisan.length === 0 ? <div className="text-center py-8"><p className="text-gray-500">Belum ada sesi arisan</p></div> : <div className="overflow-x-auto"><table className="w-full"><thead className="bg-gray-50 dark:bg-gray-700"><tr><th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">No</th><th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Periode</th><th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pemenang</th><th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Potongan</th><th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tanggal</th></tr></thead><tbody className="divide-y divide-gray-200 dark:divide-gray-700">{sesiArisan.map((sesi, idx) => (<tr key={sesi.id} className="hover:bg-gray-50"><td className="px-4 py-3 text-sm text-gray-500">{idx + 1}</td><td className="px-4 py-3 text-sm font-medium text-gray-900">{sesi.periode}</td><td className="px-4 py-3 text-sm text-purple-600 font-medium">{sesi.pemenangNama}</td><td className="px-4 py-3 text-sm text-right">Rp {sesi.jumlahPotongan?.toLocaleString('id-ID')}</td><td className="px-4 py-3 text-sm text-gray-500">{sesi.createdAt?.toLocaleDateString('id-ID')}</td></tr>))}</tbody></table></div>}
+            <div className="flex items-center gap-2 mb-4">
+              <Trophy size={20} className="text-yellow-500" />
+              <h2 className="text-lg font-semibold">Riwayat Arisan</h2>
+            </div>
+            {loading ? (
+              <div className="flex justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              </div>
+            ) : sesiArisan.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500">Belum ada sesi arisan</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">No</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Periode</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pemenang</th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Potongan</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tanggal</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                    {sesiArisan.map((sesi, idx) => (
+                      <tr key={sesi.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                        <td className="px-4 py-3 text-sm text-gray-500">{idx + 1}</td>
+                        <td className="px-4 py-3 text-sm font-medium text-gray-900">{sesi.periode}</td>
+                        <td className="px-4 py-3 text-sm text-purple-600 font-medium">{sesi.pemenangNama}</td>
+                        <td className="px-4 py-3 text-sm text-right">Rp {sesi.jumlahPotongan?.toLocaleString('id-ID')}</td>
+                        <td className="px-4 py-3 text-sm text-gray-500">{sesi.createdAt?.toLocaleDateString('id-ID')}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
       </div>
