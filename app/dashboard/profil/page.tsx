@@ -1,4 +1,3 @@
-// app/dashboard/profil/page.tsx
 'use client';
 
 import { useState } from 'react';
@@ -19,12 +18,11 @@ export default function ProfilPage() {
   const [formData, setFormData] = useState({
     nama: userData?.nama || '',
     noTel: userData?.noTel || '',
-    alamat: userData?.alamat || '',
+    alamat: (userData as any)?.alamat || '',
   });
 
   if (!user) return null;
 
-  // Update profil (nama, noTel, alamat)
   const handleUpdateProfil = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -37,7 +35,6 @@ export default function ProfilPage() {
       });
       toast.success('Profil berhasil diperbarui');
       setEditingProfil(false);
-      // Refresh halaman setelah 1 detik
       setTimeout(() => window.location.reload(), 1000);
     } catch (error) {
       console.error(error);
@@ -47,7 +44,6 @@ export default function ProfilPage() {
     }
   };
 
-  // Ganti password
   const handleGantiPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
@@ -122,7 +118,7 @@ export default function ProfilPage() {
             </div>
             <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
               <MapPin size={18} className="text-gray-500" />
-              <div><p className="text-sm text-gray-500">Alamat</p><p className="font-medium">{userData?.alamat || '-'}</p></div>
+              <div><p className="text-sm text-gray-500">Alamat</p><p className="font-medium">{(userData as any)?.alamat || '-'}</p></div>
             </div>
             <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
               <KeyRound size={18} className="text-gray-500" />
