@@ -162,65 +162,127 @@ export default function CashBulananPage() {
 
   // Pengelola: toggle status bayar untuk anggota tertentu
   const handleToggleBayar = async (userId: string, currentStatus: 'lunas' | 'belum') => {
-    if (!isPengelola) return;
-    const newStatus = currentStatus === 'lunas' ? 'belum' : 'lunas';
-    setSubmitting(true);
-    try {
-      const cashRef = doc(db, 'cash_bulanan', `${userId}_${selectedBulan}_${selectedTahun}`);
-      await setDoc(cashRef, {
-        userId,
-        userNama: cashData[userId]?.userNama || anggota.find(a => a.uid === userId)?.nama,
-        bulan: selectedBulan,
-        tahun: selectedTahun,
+  if (!isPengelola) return;
+  
+  const newStatus = currentStatus === 'lunas' ? 'belum' : 'lunas';
+  const anggotaTarget = anggota.find(a => a.uid === userId);
+  if (!anggotaTarget) return;
+
+  setSubmitting(true);
+  try {
+    const batch = writeBatch(db);
+    const cashRef = doc(db, 'cash_bulanan', `${userId}_${selectedBulan}_${selectedTahun}`);
+
+    if (newStatus === 'lunas') {
+      // Potong saldo anggota
+      const saldoRef = doc(db, 'saldo', userId);
+      const saldoSnap = await getDoc(saldoRef);
+      const saldoSekarang = saldoSnap.exists() ? saldoSnap.data().jumlah || 0 : 0;
+
+      if (saldoSekarang < besaranCash) {
+        toast.error(`Saldo ${anggotaTarget.nama} tidak cukup (Rp ${saldoSekarang.toLocaleString('id-ID')})`);
+        setSubmitting(false);
+        return;
+      }
+
+      const newSaldo = saldoSekarang - besaranCash;
+      batch.update(saldoRef, { jumlah: newSaldo });
+
+      // Catat transaksi
+      const transaksiRef = doc(collection(db, 'transaksi_simpanan'));
+      batch.set(transaksiRef, {
+        userId: userId,
+        userNama: anggotaTarget.nama,
+        jenis: 'tarik',
         jumlah: besaranCash,
-        statusBayar: newStatus,
-        tanggalBayar: newStatus === 'lunas' ? Timestamp.now() : null,
-        updatedAt: Timestamp.now(),
-      }, { merge: true });
-      
-      toast.success(`Status bayar diperbarui`);
-      fetchCashData();
-    } catch (error) {
-      console.error(error);
-      toast.error('Gagal mengupdate status bayar');
-    } finally {
-      setSubmitting(false);
+        keterangan: `Pembayaran cash bulanan ${getNamaBulan(selectedBulan)} ${selectedTahun} (oleh pengelola)`,
+        timestamp: Timestamp.now(),
+        saldoSetelah: newSaldo,
+      });
+    } else {
+      // Jika batal lunas, kita tidak bisa mengembalikan saldo (biar manual)
+      toast.error('Pembatalan lunas tidak mengembalikan saldo. Atur manual jika perlu.');
     }
-  };
+
+    batch.set(cashRef, {
+      statusBayar: newStatus,
+      tanggalBayar: newStatus === 'lunas' ? Timestamp.now() : null,
+    }, { merge: true });
+
+    await batch.commit();
+    toast.success(`Status bayar ${newStatus === 'lunas' ? 'lunas' : 'belum'} untuk ${anggotaTarget.nama}`);
+    fetchData();
+  } catch (error) {
+    console.error(error);
+    toast.error('Gagal mengupdate status bayar');
+  } finally {
+    setSubmitting(false);
+  }
+};
 
   // Anggota: bayar cash sendiri
-  const handleBayarSendiri = async () => {
-    if (isPengelola || !user) return;
-    const current = cashData[user.uid];
-    if (!current) return;
-    if (current.statusBayar === 'lunas') {
-      toast.error('Anda sudah membayar cash bulan ini');
-      return;
-    }
-    
-    setSubmitting(true);
-    try {
-      const cashRef = doc(db, 'cash_bulanan', `${user.uid}_${selectedBulan}_${selectedTahun}`);
-      await setDoc(cashRef, {
-        userId: user.uid,
-        userNama: userData?.nama,
-        bulan: selectedBulan,
-        tahun: selectedTahun,
-        jumlah: besaranCash,
-        statusBayar: 'lunas',
-        tanggalBayar: Timestamp.now(),
-        updatedAt: Timestamp.now(),
-      }, { merge: true });
-      
-      toast.success(`Pembayaran cash bulan ${selectedBulan}/${selectedTahun} berhasil!`);
-      fetchCashData();
-    } catch (error) {
-      console.error(error);
-      toast.error('Gagal melakukan pembayaran');
-    } finally {
-      setSubmitting(false);
-    }
-  };
+const handleBayarSendiri = async () => {
+  if (isPengelola || !user) return;
+  const current = cashData[user.uid];
+  if (!current) return;
+  if (current.statusBayar === 'lunas') {
+    toast.error('Anda sudah membayar cash bulan ini');
+    return;
+  }
+
+  // Cek saldo cukup?
+  const saldoRef = doc(db, 'saldo', user.uid);
+  const saldoSnap = await getDoc(saldoRef);
+  const saldoSekarang = saldoSnap.exists() ? saldoSnap.data().jumlah || 0 : 0;
+
+  if (saldoSekarang < besaranCash) {
+    toast.error(`Saldo tidak cukup. Saldo Anda Rp ${saldoSekarang.toLocaleString('id-ID')}, butuh Rp ${besaranCash.toLocaleString('id-ID')}`);
+    return;
+  }
+
+  setSubmitting(true);
+  try {
+    const batch = writeBatch(db);
+
+    // 1. Potong saldo
+    const newSaldo = saldoSekarang - besaranCash;
+    batch.update(saldoRef, { jumlah: newSaldo });
+
+    // 2. Catat transaksi tarik
+    const transaksiRef = doc(collection(db, 'transaksi_simpanan'));
+    batch.set(transaksiRef, {
+      userId: user.uid,
+      userNama: userData?.nama,
+      jenis: 'tarik',
+      jumlah: besaranCash,
+      keterangan: `Pembayaran cash bulanan ${getNamaBulan(selectedBulan)} ${selectedTahun}`,
+      timestamp: Timestamp.now(),
+      saldoSetelah: newSaldo,
+    });
+
+    // 3. Update status cash
+    const cashRef = doc(db, 'cash_bulanan', `${user.uid}_${selectedBulan}_${selectedTahun}`);
+    batch.set(cashRef, {
+      userId: user.uid,
+      userNama: userData?.nama,
+      bulan: selectedBulan,
+      tahun: selectedTahun,
+      jumlah: besaranCash,
+      statusBayar: 'lunas',
+      tanggalBayar: Timestamp.now(),
+    }, { merge: true });
+
+    await batch.commit();
+
+    toast.success(`Pembayaran cash bulan ${selectedBulan}/${selectedTahun} berhasil!`);
+    fetchData();
+  } catch (error) {
+    console.error(error);
+    toast.error('Gagal melakukan pembayaran');
+  } finally {
+    setSubmitting(false);
+  }
+};
 
   // Generate bulan
   const bulanList = [
