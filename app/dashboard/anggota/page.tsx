@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { db, auth as firebaseAuth } from '@/app/firebase/client';
 import { collection, getDocs, doc, deleteDoc, updateDoc, setDoc } from 'firebase/firestore';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signOut, signInWithEmailAndPassword } from 'firebase/auth';
 import toast, { Toaster } from 'react-hot-toast';
 import { Plus, Pencil, Trash2, RefreshCw } from 'lucide-react';
 import AnggotaForm from '@/components/AnggotaForm';
@@ -20,13 +20,12 @@ type Anggota = {
 };
 
 export default function KelolaAnggotaPage() {
-  const { userData } = useAuth();
+  const { userData, user } = useAuth();
   const [anggota, setAnggota] = useState<Anggota[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingAnggota, setEditingAnggota] = useState<Anggota | null>(null);
 
-  // HOOKS harus dipanggil sebelum conditional return
   useEffect(() => {
     fetchAnggota();
   }, []);
@@ -52,9 +51,25 @@ export default function KelolaAnggotaPage() {
     try {
       const password = data.password && data.password.length >= 6 ? data.password : 'anggota123';
       
+      // Simpan email pengelola saat ini
+      const adminEmail = user?.email;
+      if (!adminEmail) {
+        toast.error('Sesi pengelola tidak ditemukan');
+        return;
+      }
+
+      // Minta password pengelola untuk login ulang nanti
+      const adminPassword = prompt('Masukkan password Anda (pengelola) untuk melanjutkan:');
+      if (!adminPassword) {
+        toast.error('Password pengelola diperlukan');
+        return;
+      }
+
+      // Buat akun anggota (otomatis login ke akun anggota)
       const userCredential = await createUserWithEmailAndPassword(firebaseAuth, data.email, password);
       const uid = userCredential.user.uid;
 
+      // Simpan ke Firestore
       await setDoc(doc(db, 'users', uid), {
         uid,
         nama: data.nama,
@@ -65,16 +80,27 @@ export default function KelolaAnggotaPage() {
         createdAt: new Date().toISOString()
       });
 
+      // Logout dari akun anggota
+      await signOut(firebaseAuth);
+      
+      // Login kembali sebagai pengelola
+      await signInWithEmailAndPassword(firebaseAuth, adminEmail, adminPassword);
+
       toast.success('Anggota berhasil ditambahkan');
       fetchAnggota();
+      setModalOpen(false);
     } catch (error: any) {
       console.error(error);
       if (error.code === 'auth/email-already-in-use') {
         toast.error('Email sudah terdaftar');
       } else if (error.code === 'auth/weak-password') {
         toast.error('Password terlalu lemah (minimal 6 karakter)');
+      } else if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+        toast.error('Password pengelola salah');
+      } else if (error.code === 'auth/popup-closed-by-user') {
+        toast.error('Proses dibatalkan');
       } else {
-        toast.error('Gagal menambahkan anggota');
+        toast.error('Gagal menambahkan anggota: ' + error.message);
       }
       throw error;
     }
@@ -111,7 +137,7 @@ export default function KelolaAnggotaPage() {
     }
   };
 
-  // ROLE CHECK SETELAH HOOKS
+  // ROLE CHECK setelah hooks
   if (userData?.role !== 'pengelola') {
     return (
       <div className="p-6">
@@ -182,8 +208,8 @@ export default function KelolaAnggotaPage() {
                           <Trash2 size={18} />
                         </button>
                       </div>
-                     </td>
-                   </tr>
+                    </td>
+                  </tr>
                 ))}
               </tbody>
             </table>
