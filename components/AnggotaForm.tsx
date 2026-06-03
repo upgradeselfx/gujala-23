@@ -9,6 +9,7 @@ type AnggotaFormData = {
   email: string;
   noTel: string;
   alamat: string;
+  password?: string; // tambahan untuk password
 };
 
 interface AnggotaFormProps {
@@ -25,14 +26,15 @@ export default function AnggotaForm({ isOpen, onClose, onSubmit, initialData, ti
     email: '',
     noTel: '',
     alamat: '',
+    password: '',
   });
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (initialData) {
-      setFormData(initialData);
+      setFormData({ ...initialData, password: '' });
     } else {
-      setFormData({ nama: '', email: '', noTel: '', alamat: '' });
+      setFormData({ nama: '', email: '', noTel: '', alamat: '', password: '' });
     }
   }, [initialData, isOpen]);
 
@@ -93,6 +95,23 @@ export default function AnggotaForm({ isOpen, onClose, onSubmit, initialData, ti
               <p className="text-xs text-gray-500 mt-1">Email tidak bisa diubah</p>
             )}
           </div>
+
+          {/* FIELD PASSWORD (hanya untuk tambah baru, bukan edit) */}
+          {!initialData && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Password <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="password"
+                required
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                placeholder="Minimal 6 karakter"
+              />
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">

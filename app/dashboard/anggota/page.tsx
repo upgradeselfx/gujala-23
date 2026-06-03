@@ -61,35 +61,37 @@ export default function KelolaAnggotaPage() {
     fetchAnggota();
   }, []);
 
-  const handleTambah = async (data: { nama: string; email: string; noTel: string; alamat: string }) => {
-    try {
-      // Buat akun di Firebase Auth dengan password default
-      const userCredential = await createUserWithEmailAndPassword(firebaseAuth, data.email, 'anggota123');
-      const uid = userCredential.user.uid;
+  const handleTambah = async (data: { nama: string; email: string; noTel: string; alamat: string; password: string }) => {
+  try {
+    // Buat akun di Firebase Auth dengan password dari form
+    const userCredential = await createUserWithEmailAndPassword(firebaseAuth, data.email, data.password);
+    const uid = userCredential.user.uid;
 
-      // Simpan ke Firestore
-      await setDoc(doc(db, 'users', uid), {
-        uid,
-        nama: data.nama,
-        email: data.email,
-        noTel: data.noTel,
-        alamat: data.alamat,
-        role: 'anggota',
-        createdAt: new Date().toISOString()
-      });
+    // Simpan ke Firestore
+    await setDoc(doc(db, 'users', uid), {
+      uid,
+      nama: data.nama,
+      email: data.email,
+      noTel: data.noTel,
+      alamat: data.alamat,
+      role: 'anggota',
+      createdAt: new Date().toISOString()
+    });
 
-      toast.success('Anggota berhasil ditambahkan');
-      fetchAnggota();
-    } catch (error: any) {
-      console.error(error);
-      if (error.code === 'auth/email-already-in-use') {
-        toast.error('Email sudah terdaftar');
-      } else {
-        toast.error('Gagal menambahkan anggota');
-      }
-      throw error;
+    toast.success('Anggota berhasil ditambahkan');
+    fetchAnggota();
+  } catch (error: any) {
+    console.error(error);
+    if (error.code === 'auth/email-already-in-use') {
+      toast.error('Email sudah terdaftar');
+    } else if (error.code === 'auth/weak-password') {
+      toast.error('Password terlalu lemah (minimal 6 karakter)');
+    } else {
+      toast.error('Gagal menambahkan anggota');
     }
-  };
+    throw error;
+  }
+};
 
   const handleEdit = async (data: { nama: string; email: string; noTel: string; alamat: string }) => {
     if (!editingAnggota) return;

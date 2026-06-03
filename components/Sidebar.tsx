@@ -2,6 +2,7 @@
 'use client';
 
 import Link from 'next/link';
+import { UserCircle } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { 
@@ -32,6 +33,7 @@ const menuItems: MenuItem[] = [
   { name: 'Arisan', href: '/dashboard/arisan', icon: <Trophy size={20} />, roles: ['anggota', 'pengelola'] },
   { name: 'Pengumuman', href: '/dashboard/pengumuman', icon: <Megaphone size={20} />, roles: ['anggota', 'pengelola'] },
   { name: 'Laporan', href: '/dashboard/laporan', icon: <FileText size={20} />, roles: ['anggota', 'pengelola'] },
+  { name: 'Profil', href: '/dashboard/profil', icon: <UserCircle size={20} />, roles: ['anggota', 'pengelola'] },
 ];
 
 export default function Sidebar() {
