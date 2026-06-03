@@ -25,8 +25,36 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* Dark mode manual override */
-.dark {
-  --background: #0a0a0a !important;
-  --foreground: #ededed !important;
+/* Dark mode manual */
+body.dark-mode {
+  background: #0a0a0a !important;
+  color: #ededed !important;
+}
+
+body.dark-mode .bg-white {
+  background-color: #1a1a1a !important;
+}
+
+body.dark-mode .bg-gray-50 {
+  background-color: #1f1f1f !important;
+}
+
+body.dark-mode .border-gray-200 {
+  border-color: #333333 !important;
+}
+
+body.dark-mode .text-gray-900 {
+  color: #ffffff !important;
+}
+
+body.dark-mode .text-gray-700 {
+  color: #cccccc !important;
+}
+
+body.dark-mode .text-gray-500 {
+  color: #999999 !important;
+}
+
+body.dark-mode .bg-gray-100 {
+  background-color: #2a2a2a !important;
 }

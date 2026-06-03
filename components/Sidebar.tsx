@@ -48,30 +48,31 @@ export default function Sidebar() {
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme === 'dark') {
-      document.documentElement.classList.add('dark');
+      document.body.classList.add('dark-mode');
       setIsDark(true);
     }
   }, []);
 
   const toggleDarkMode = () => {
     if (isDark) {
-      document.documentElement.classList.remove('dark');
+      document.body.classList.remove('dark-mode');
       localStorage.setItem('theme', 'light');
+      setIsDark(false);
     } else {
-      document.documentElement.classList.add('dark');
+      document.body.classList.add('dark-mode');
       localStorage.setItem('theme', 'dark');
+      setIsDark(true);
     }
-    setIsDark(!isDark);
   };
 
   const filteredMenu = menuItems.filter(item => item.roles.includes(role as 'anggota' | 'pengelola'));
 
   return (
-    <aside className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col h-screen sticky top-0">
+    <aside className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 flex flex-col h-screen sticky top-0">
       {/* Logo */}
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-        <h1 className="text-xl font-bold text-blue-600 dark:text-blue-400">GUJALA 23</h1>
-        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+      <div className="p-4 border-b border-gray-200">
+        <h1 className="text-xl font-bold text-blue-600">GUJALA 23</h1>
+        <p className="text-xs text-gray-500 mt-1">
           {role === 'pengelola' ? 'Pengelola' : 'Anggota'}
         </p>
       </div>
@@ -86,8 +87,8 @@ export default function Sidebar() {
               href={item.href}
               className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
                 isActive
-                  ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
-                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                  ? 'bg-blue-50 text-blue-600'
+                  : 'text-gray-700 hover:bg-gray-100'
               }`}
             >
               {item.icon}
@@ -101,7 +102,7 @@ export default function Sidebar() {
       <div className="px-4 pb-2">
         <button
           onClick={toggleDarkMode}
-          className="flex items-center gap-3 px-3 py-2 w-full rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          className="flex items-center gap-3 px-3 py-2 w-full rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
         >
           {isDark ? <Sun size={20} /> : <Moon size={20} />}
           <span className="text-sm font-medium">{isDark ? 'Mode Terang' : 'Mode Gelap'}</span>
@@ -109,10 +110,10 @@ export default function Sidebar() {
       </div>
 
       {/* Logout Button */}
-      <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+      <div className="p-4 border-t border-gray-200">
         <button
           onClick={() => logout()}
-          className="flex items-center gap-3 px-3 py-2 w-full rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
+          className="flex items-center gap-3 px-3 py-2 w-full rounded-lg text-red-600 hover:bg-red-50 transition-colors"
         >
           <LogOut size={20} />
           <span className="text-sm font-medium">Logout</span>
