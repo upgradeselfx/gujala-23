@@ -99,14 +99,17 @@ export default function LoginPage() {
             </button>
           </div>
 
+          <div className="text-center mt-4">
+            <Link href="/login/forgot-password" className="text-sm text-blue-600 hover:underline">
+                Lupa password?
+            </Link>
+            </div>
+
           <div className="text-center">
             <Link href="/register" className="text-sm text-blue-600 hover:text-blue-500">
               Belum punya akun? Daftar
             </Link>
 
-            <Link href="/login/forgot-password" className="text-sm text-blue-600 hover:underline block text-center mt-4">
-                Lupa password?
-            </Link>
           </div>
         </form>
       </div>
