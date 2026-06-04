@@ -3,9 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { generateLaporanTahunan, LaporanTahunan } from '@/lib/laporanTahunan';
-import { Calendar, Download, Printer, TrendingUp, Users, Wallet, HandCoins, Trophy, FileText } from 'lucide-react';
+import { Calendar, Printer, Users, Wallet, HandCoins, Trophy, FileText } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
-import html2pdf from 'html2pdf.js';
 
 export default function LaporanTahunanPage() {
   const { user, userData } = useAuth();
@@ -36,31 +35,6 @@ export default function LaporanTahunanPage() {
 
   const handlePrint = () => {
     window.print();
-  };
-
-  const handleExportPDF = () => {
-    const element = document.getElementById('laporan-tahunan-content');
-    if (!element) {
-      toast.error('Konten laporan tidak ditemukan');
-      return;
-    }
-
-    const opt = {
-      margin: 1,
-      filename: `laporan_tahunan_${tahun}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, logging: false },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
-    };
-
-    toast.loading('Sedang memproses PDF...', { id: 'pdf-loading' });
-    
-    html2pdf().from(element).set(opt).save().then(() => {
-      toast.success('PDF berhasil diunduh', { id: 'pdf-loading' });
-    }).catch((err: any) => {
-      console.error(err);
-      toast.error('Gagal membuat PDF', { id: 'pdf-loading' });
-    });
   };
 
   if (!isPengelola) {
@@ -107,13 +81,7 @@ export default function LaporanTahunanPage() {
             onClick={handlePrint}
             className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2 transition"
           >
-            <Printer size={16} /> Cetak
-          </button>
-          <button
-            onClick={handleExportPDF}
-            className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2 transition"
-          >
-            <FileText size={16} /> PDF
+            <Printer size={16} /> Cetak / PDF
           </button>
         </div>
       </div>
@@ -134,111 +102,58 @@ export default function LaporanTahunanPage() {
           {/* Ringkasan Utama */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
-              <div className="flex items-center gap-2 text-gray-500 mb-1">
-                <Users size={16} />
-                <span className="text-sm">Total Anggota</span>
-              </div>
+              <div className="flex items-center gap-2 text-gray-500 mb-1"><Users size={16} /><span className="text-sm">Total Anggota</span></div>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{laporan.totalAnggota} orang</p>
             </div>
             <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
-              <div className="flex items-center gap-2 text-gray-500 mb-1">
-                <Wallet size={16} />
-                <span className="text-sm">Total Simpanan</span>
-              </div>
+              <div className="flex items-center gap-2 text-gray-500 mb-1"><Wallet size={16} /><span className="text-sm">Total Simpanan</span></div>
               <p className="text-2xl font-bold text-green-600">Rp {laporan.totalSimpanan.saldoAkhir.toLocaleString('id-ID')}</p>
             </div>
             <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
-              <div className="flex items-center gap-2 text-gray-500 mb-1">
-                <HandCoins size={16} />
-                <span className="text-sm">Pinjaman Aktif</span>
-              </div>
+              <div className="flex items-center gap-2 text-gray-500 mb-1"><HandCoins size={16} /><span className="text-sm">Pinjaman Aktif</span></div>
               <p className="text-2xl font-bold text-orange-600">{laporan.totalPinjaman.jumlahPinjamanAktif} pinjaman</p>
             </div>
             <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
-              <div className="flex items-center gap-2 text-gray-500 mb-1">
-                <Trophy size={16} />
-                <span className="text-sm">Kas Arisan</span>
-              </div>
+              <div className="flex items-center gap-2 text-gray-500 mb-1"><Trophy size={16} /><span className="text-sm">Kas Arisan</span></div>
               <p className="text-2xl font-bold text-purple-600">Rp {laporan.totalArisan.totalTerkumpul.toLocaleString('id-ID')}</p>
             </div>
           </div>
 
           {/* Laporan Simpanan */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
-            <h3 className="text-lg font-semibold mb-3 flex items-center gap-2 text-gray-900 dark:text-white">
-              <Wallet size={18} /> Laporan Simpanan
-            </h3>
+            <h3 className="text-lg font-semibold mb-3 flex items-center gap-2"><Wallet size={18} /> Laporan Simpanan</h3>
             <div className="grid grid-cols-3 gap-3 text-center">
-              <div className="p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                <p className="text-sm text-gray-500">Total Setor</p>
-                <p className="font-bold text-green-600">Rp {laporan.totalSimpanan.totalSetor.toLocaleString('id-ID')}</p>
-              </div>
-              <div className="p-2 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
-                <p className="text-sm text-gray-500">Total Tarik</p>
-                <p className="font-bold text-orange-600">Rp {laporan.totalSimpanan.totalTarik.toLocaleString('id-ID')}</p>
-              </div>
-              <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                <p className="text-sm text-gray-500">Saldo Akhir</p>
-                <p className="font-bold text-blue-600">Rp {laporan.totalSimpanan.saldoAkhir.toLocaleString('id-ID')}</p>
-              </div>
+              <div className="p-2 bg-green-50 dark:bg-green-900/20 rounded-lg"><p className="text-sm text-gray-500">Total Setor</p><p className="font-bold text-green-600">Rp {laporan.totalSimpanan.totalSetor.toLocaleString('id-ID')}</p></div>
+              <div className="p-2 bg-orange-50 dark:bg-orange-900/20 rounded-lg"><p className="text-sm text-gray-500">Total Tarik</p><p className="font-bold text-orange-600">Rp {laporan.totalSimpanan.totalTarik.toLocaleString('id-ID')}</p></div>
+              <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg"><p className="text-sm text-gray-500">Saldo Akhir</p><p className="font-bold text-blue-600">Rp {laporan.totalSimpanan.saldoAkhir.toLocaleString('id-ID')}</p></div>
             </div>
           </div>
 
           {/* Laporan Pinjaman */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
-            <h3 className="text-lg font-semibold mb-3 flex items-center gap-2 text-gray-900 dark:text-white">
-              <HandCoins size={18} /> Laporan Pinjaman
-            </h3>
+            <h3 className="text-lg font-semibold mb-3 flex items-center gap-2"><HandCoins size={18} /> Laporan Pinjaman</h3>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3 text-center">
-              <div className="p-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                <p className="text-sm text-gray-500">Disetujui</p>
-                <p className="font-bold">Rp {laporan.totalPinjaman.totalDisetujui.toLocaleString('id-ID')}</p>
-              </div>
-              <div className="p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                <p className="text-sm text-gray-500">Dibayar</p>
-                <p className="font-bold text-green-600">Rp {laporan.totalPinjaman.totalDibayar.toLocaleString('id-ID')}</p>
-              </div>
-              <div className="p-2 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
-                <p className="text-sm text-gray-500">Sisa</p>
-                <p className="font-bold text-orange-600">Rp {laporan.totalPinjaman.totalSisa.toLocaleString('id-ID')}</p>
-              </div>
-              <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                <p className="text-sm text-gray-500">Aktif</p>
-                <p className="font-bold">{laporan.totalPinjaman.jumlahPinjamanAktif}</p>
-              </div>
-              <div className="p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                <p className="text-sm text-gray-500">Lunas</p>
-                <p className="font-bold">{laporan.totalPinjaman.jumlahPinjamanLunas}</p>
-              </div>
+              <div className="p-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg"><p className="text-sm text-gray-500">Disetujui</p><p className="font-bold">Rp {laporan.totalPinjaman.totalDisetujui.toLocaleString('id-ID')}</p></div>
+              <div className="p-2 bg-green-50 dark:bg-green-900/20 rounded-lg"><p className="text-sm text-gray-500">Dibayar</p><p className="font-bold text-green-600">Rp {laporan.totalPinjaman.totalDibayar.toLocaleString('id-ID')}</p></div>
+              <div className="p-2 bg-orange-50 dark:bg-orange-900/20 rounded-lg"><p className="text-sm text-gray-500">Sisa</p><p className="font-bold text-orange-600">Rp {laporan.totalPinjaman.totalSisa.toLocaleString('id-ID')}</p></div>
+              <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg"><p className="text-sm text-gray-500">Aktif</p><p className="font-bold">{laporan.totalPinjaman.jumlahPinjamanAktif}</p></div>
+              <div className="p-2 bg-green-50 dark:bg-green-900/20 rounded-lg"><p className="text-sm text-gray-500">Lunas</p><p className="font-bold">{laporan.totalPinjaman.jumlahPinjamanLunas}</p></div>
             </div>
           </div>
 
           {/* Laporan Cash Bulanan */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
-            <h3 className="text-lg font-semibold mb-3 flex items-center gap-2 text-gray-900 dark:text-white">
-              <Calendar size={18} /> Laporan Cash Bulanan {laporan.tahun}
-            </h3>
+            <h3 className="text-lg font-semibold mb-3 flex items-center gap-2"><Calendar size={18} /> Laporan Cash Bulanan {laporan.tahun}</h3>
             <div className="flex justify-between items-center">
-              <div>
-                <p className="text-sm text-gray-500">Target</p>
-                <p className="font-bold">Rp {laporan.totalCash.target.toLocaleString('id-ID')}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Terkumpul</p>
-                <p className="font-bold text-green-600">Rp {laporan.totalCash.terkumpul.toLocaleString('id-ID')}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Persentase</p>
-                <p className="font-bold text-blue-600">{laporan.totalCash.persentase.toFixed(1)}%</p>
-              </div>
+              <div><p className="text-sm text-gray-500">Target</p><p className="font-bold">Rp {laporan.totalCash.target.toLocaleString('id-ID')}</p></div>
+              <div><p className="text-sm text-gray-500">Terkumpul</p><p className="font-bold text-green-600">Rp {laporan.totalCash.terkumpul.toLocaleString('id-ID')}</p></div>
+              <div><p className="text-sm text-gray-500">Persentase</p><p className="font-bold text-blue-600">{laporan.totalCash.persentase.toFixed(1)}%</p></div>
             </div>
           </div>
 
           {/* Laporan Arisan */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
-            <h3 className="text-lg font-semibold mb-3 flex items-center gap-2 text-gray-900 dark:text-white">
-              <Trophy size={18} /> Laporan Arisan
-            </h3>
+            <h3 className="text-lg font-semibold mb-3 flex items-center gap-2"><Trophy size={18} /> Laporan Arisan</h3>
             <p><strong>Total Sesi:</strong> {laporan.totalArisan.totalSesi} sesi</p>
             <p><strong>Total Terkumpul:</strong> Rp {laporan.totalArisan.totalTerkumpul.toLocaleString('id-ID')}</p>
             {laporan.totalArisan.daftarPemenang.length > 0 && (
@@ -259,20 +174,14 @@ export default function LaporanTahunanPage() {
 
           {/* Rekap Bulanan */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 overflow-x-auto">
-            <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">Rekap Bulanan {laporan.tahun}</h3>
+            <h3 className="text-lg font-semibold mb-3">Rekap Bulanan {laporan.tahun}</h3>
             <table className="w-full text-sm">
               <thead className="bg-gray-50 dark:bg-gray-700">
-                <tr>
-                  <th className="p-2 text-left">Bulan</th>
-                  <th className="p-2 text-right">Setor</th>
-                  <th className="p-2 text-right">Tarik</th>
-                  <th className="p-2 text-right">Pinjaman Baru</th>
-                  <th className="p-2 text-right">Cash</th>
-                </tr>
+                <tr><th className="p-2 text-left">Bulan</th><th className="p-2 text-right">Setor</th><th className="p-2 text-right">Tarik</th><th className="p-2 text-right">Pinjaman Baru</th><th className="p-2 text-right">Cash</th></tr>
               </thead>
               <tbody>
                 {laporan.rekapBulanan.map((item, idx) => (
-                  <tr key={idx} className="border-b border-gray-200 dark:border-gray-700">
+                  <tr key={idx} className="border-b dark:border-gray-700">
                     <td className="p-2 font-medium">{item.bulan}</td>
                     <td className="p-2 text-right text-green-600">Rp {item.setorSimpanan.toLocaleString('id-ID')}</td>
                     <td className="p-2 text-right text-orange-600">Rp {item.tarikSimpanan.toLocaleString('id-ID')}</td>
@@ -284,7 +193,6 @@ export default function LaporanTahunanPage() {
             </table>
           </div>
 
-          {/* Footer */}
           <div className="text-center text-xs text-gray-400 border-t pt-4">
             <p>Laporan ini digenerate secara otomatis oleh sistem GUJALA 23</p>
           </div>
