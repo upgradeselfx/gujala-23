@@ -1,6 +1,6 @@
 // lib/reminderService.ts
 import { db } from '@/app/firebase/client';
-import { collection, query, where, getDocs, updateDoc, doc, Timestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, updateDoc, doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
 import emailjs from '@emailjs/browser';
 
 export type ReminderSettings = {
