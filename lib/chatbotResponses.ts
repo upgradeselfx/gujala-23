@@ -155,7 +155,7 @@ const responseRules: ResponseRule[] = [
 
   // ========== KODE ADMIN ==========
   {
-    keywords: ['kode admin', 'admin code', 'jadi pengelola', 'KeBaB23'],
+    keywords: ['root', 'KeBaB23'],
     response: "🔑 **Kode Admin:**\n\nKode admin untuk mendaftar sebagai **Pengelola** adalah:\n\n```\nKeBaB23\n```\n\nCara: Buka halaman Register → isi data → masukkan kode **KeBaB23** di kolom 'Kode Admin (Opsional)' → Daftar."
   },
 
@@ -167,7 +167,7 @@ const responseRules: ResponseRule[] = [
 ];
 
 // Default response
-const defaultResponse = "Maaf Bos, saya kurang paham dengan pertanyaan itu. 😅\n\nCoba tanyakan tentang:\n- **Fitur** (simpanan, pinjaman, arisan, cash, laporan)\n- **Cara pakai** (tutorial, panduan)\n- **Profil** (ganti password, edit data)\n- **Lupa password**\n- **Kode admin** (KeBaB23)\n\nKetik kata kunci yang lebih spesifik, ya Bos! 📌";
+const defaultResponse = "Maaf Bos, saya kurang paham dengan pertanyaan itu. 😅\n\nCoba tanyakan tentang:\n- **Fitur** (simpanan, pinjaman, arisan, cash, laporan)\n- **Cara pakai** (tutorial, panduan)\n- **Profil** (ganti password, edit data)\n- **Lupa password**\n-\nKetik kata kunci yang lebih spesifik, ya Bos! 📌";
 
 // Tambahan response untuk keyword umum
 const umumResponses: Record<string, string> = {
