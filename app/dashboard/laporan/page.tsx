@@ -401,35 +401,35 @@ export default function LaporanPage() {
   };
 
   return (
-    <div className="p-6">
+    <div className="p-4 sm:p-6">
       <Toaster position="top-right" />
 
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Laporan</h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">Lihat rekap data simpanan, pinjaman, cash bulanan, dan arisan</p>
         </div>
         <div className="flex gap-2">
-          <button onClick={handlePrint} className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2">
+          <button onClick={handlePrint} className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2 text-sm sm:text-base">
             <Printer size={16} /> Cetak / PDF
           </button>
-          <button onClick={handleExportCSV} className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2">
+          <button onClick={handleExportCSV} className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 text-sm sm:text-base">
             <Download size={16} /> Export CSV
           </button>
         </div>
       </div>
 
-      <div className="flex gap-2 mb-6 border-b border-gray-200 dark:border-gray-700 flex-wrap">
-        <button onClick={() => setActiveTab('simpanan')} className={`px-4 py-2 flex items-center gap-2 ${activeTab === 'simpanan' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}>
+      <div className="flex gap-2 mb-6 border-b border-gray-200 dark:border-gray-700 flex-wrap overflow-x-auto pb-1">
+        <button onClick={() => setActiveTab('simpanan')} className={`px-3 sm:px-4 py-2 flex items-center gap-2 whitespace-nowrap text-sm sm:text-base ${activeTab === 'simpanan' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}>
           <Wallet size={16} /> Simpanan
         </button>
-        <button onClick={() => setActiveTab('pinjaman')} className={`px-4 py-2 flex items-center gap-2 ${activeTab === 'pinjaman' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}>
+        <button onClick={() => setActiveTab('pinjaman')} className={`px-3 sm:px-4 py-2 flex items-center gap-2 whitespace-nowrap text-sm sm:text-base ${activeTab === 'pinjaman' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}>
           <HandCoins size={16} /> Pinjaman
         </button>
-        <button onClick={() => setActiveTab('cash')} className={`px-4 py-2 flex items-center gap-2 ${activeTab === 'cash' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}>
+        <button onClick={() => setActiveTab('cash')} className={`px-3 sm:px-4 py-2 flex items-center gap-2 whitespace-nowrap text-sm sm:text-base ${activeTab === 'cash' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}>
           <CalendarDays size={16} /> Cash Bulanan
         </button>
-        <button onClick={() => setActiveTab('arisan')} className={`px-4 py-2 flex items-center gap-2 ${activeTab === 'arisan' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}>
+        <button onClick={() => setActiveTab('arisan')} className={`px-3 sm:px-4 py-2 flex items-center gap-2 whitespace-nowrap text-sm sm:text-base ${activeTab === 'arisan' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}>
           <Trophy size={16} /> Arisan
         </button>
       </div>
@@ -437,8 +437,8 @@ export default function LaporanPage() {
       {isPengelola && activeTab !== 'arisan' && (
         <div className="mb-4 flex flex-wrap gap-3 items-center">
           <div>
-            <label className="block text-sm text-gray-600 mb-1">Filter Anggota</label>
-            <select value={selectedAnggota} onChange={(e) => setSelectedAnggota(e.target.value)} className="px-3 py-2 border border-gray-300 rounded-lg dark:bg-gray-700">
+            <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">Filter Anggota</label>
+            <select value={selectedAnggota} onChange={(e) => setSelectedAnggota(e.target.value)} className="px-3 py-2 border border-gray-300 rounded-lg dark:bg-gray-700 dark:text-white text-sm">
               <option value="all">Semua Anggota</option>
               {anggota.map(a => <option key={a.uid} value={a.uid}>{a.nama}</option>)}
             </select>
@@ -446,14 +446,14 @@ export default function LaporanPage() {
           {activeTab === 'cash' && (
             <>
               <div>
-                <label className="block text-sm text-gray-600 mb-1">Bulan</label>
-                <select value={selectedBulan} onChange={(e) => setSelectedBulan(parseInt(e.target.value))} className="px-3 py-2 border border-gray-300 rounded-lg dark:bg-gray-700">
+                <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">Bulan</label>
+                <select value={selectedBulan} onChange={(e) => setSelectedBulan(parseInt(e.target.value))} className="px-3 py-2 border border-gray-300 rounded-lg dark:bg-gray-700 dark:text-white text-sm">
                   {Array.from({ length: 12 }, (_, i) => i + 1).map(b => <option key={b} value={b}>{getNamaBulan(b)}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-sm text-gray-600 mb-1">Tahun</label>
-                <select value={selectedTahun} onChange={(e) => setSelectedTahun(parseInt(e.target.value))} className="px-3 py-2 border border-gray-300 rounded-lg dark:bg-gray-700">
+                <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">Tahun</label>
+                <select value={selectedTahun} onChange={(e) => setSelectedTahun(parseInt(e.target.value))} className="px-3 py-2 border border-gray-300 rounded-lg dark:bg-gray-700 dark:text-white text-sm">
                   {[2024, 2025, 2026, 2027, 2028].map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
               </div>
@@ -463,73 +463,77 @@ export default function LaporanPage() {
       )}
 
       <div id="laporan-content">
-        {/* LAPORAN SIMPANAN */}
+        {/* LAPORAN SIMPANAN - MODIFIKASI RESPONSIVE */}
         {activeTab === 'simpanan' && (
           <div>
             {isPengelola && selectedAnggota === 'all' && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                 <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
                   <p className="text-sm text-gray-500">Total Setor</p>
-                  <p className="text-2xl font-bold text-green-600">Rp {ringkasanSimpanan.totalSetor.toLocaleString('id-ID')}</p>
+                  <p className="text-xl sm:text-2xl font-bold text-green-600">Rp {ringkasanSimpanan.totalSetor.toLocaleString('id-ID')}</p>
                 </div>
                 <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
                   <p className="text-sm text-gray-500">Total Tarik</p>
-                  <p className="text-2xl font-bold text-orange-600">Rp {ringkasanSimpanan.totalTarik.toLocaleString('id-ID')}</p>
+                  <p className="text-xl sm:text-2xl font-bold text-orange-600">Rp {ringkasanSimpanan.totalTarik.toLocaleString('id-ID')}</p>
                 </div>
                 <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
                   <p className="text-sm text-gray-500">Total Saldo</p>
-                  <p className="text-2xl font-bold text-blue-600">Rp {ringkasanSimpanan.totalSaldo.toLocaleString('id-ID')}</p>
+                  <p className="text-xl sm:text-2xl font-bold text-blue-600">Rp {ringkasanSimpanan.totalSaldo.toLocaleString('id-ID')}</p>
                 </div>
               </div>
             )}
+            
+            {/* MODIFIKASI: Tabel bisa di-scroll horizontal di HP */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50 dark:bg-gray-700">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">No</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nama</th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total Setor</th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total Tarik</th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Saldo Akhir</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                    {laporanSimpanan.length === 0 ? (
+              <div className="overflow-x-auto -mx-4 sm:mx-0">
+                <div className="min-w-[600px] sm:min-w-full px-4 sm:px-0">
+                  <table className="w-full">
+                    <thead className="bg-gray-50 dark:bg-gray-700">
                       <tr>
-                        <td colSpan={5} className="px-6 py-8 text-center text-gray-500">Belum ada data simpanan</td>
+                        <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">No</th>
+                        <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nama</th>
+                        <th className="px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total Setor</th>
+                        <th className="px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total Tarik</th>
+                        <th className="px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Saldo Akhir</th>
                       </tr>
-                    ) : (
-                      laporanSimpanan.map((item, idx) => (
-                        <tr key={item.userId} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                          <td className="px-6 py-4 text-sm text-gray-500">{idx + 1}</td>
-                          <td className="px-6 py-4 text-sm font-medium text-gray-900">{item.userNama}</td>
-                          <td className="px-6 py-4 text-sm text-right text-green-600">Rp {item.totalSetor.toLocaleString('id-ID')}</td>
-                          <td className="px-6 py-4 text-sm text-right text-orange-600">Rp {item.totalTarik.toLocaleString('id-ID')}</td>
-                          <td className="px-6 py-4 text-sm text-right font-medium">Rp {item.saldoAkhir.toLocaleString('id-ID')}</td>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                      {laporanSimpanan.length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="px-4 sm:px-6 py-8 text-center text-gray-500">Belum ada data simpanan</td>
                         </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
+                      ) : (
+                        laporanSimpanan.map((item, idx) => (
+                          <tr key={item.userId} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                            <td className="px-4 sm:px-6 py-3 sm:py-4 text-sm text-gray-500">{idx + 1}</td>
+                            <td className="px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium text-gray-900 dark:text-white">{item.userNama}</td>
+                            <td className="px-4 sm:px-6 py-3 sm:py-4 text-sm text-right text-green-600">Rp {item.totalSetor.toLocaleString('id-ID')}</td>
+                            <td className="px-4 sm:px-6 py-3 sm:py-4 text-sm text-right text-orange-600">Rp {item.totalTarik.toLocaleString('id-ID')}</td>
+                            <td className="px-4 sm:px-6 py-3 sm:py-4 text-sm text-right font-medium dark:text-white">Rp {item.saldoAkhir.toLocaleString('id-ID')}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* LAPORAN PINJAMAN */}
+        {/* LAPORAN PINJAMAN - MODIFIKASI RESPONSIVE */}
         {activeTab === 'pinjaman' && (
           <div>
             {isPengelola && selectedAnggota === 'all' && (
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
                   <p className="text-sm text-gray-500">Total Pinjaman Disetujui</p>
-                  <p className="text-2xl font-bold text-purple-600">Rp {ringkasanPinjaman.totalPinjaman.toLocaleString('id-ID')}</p>
+                  <p className="text-xl sm:text-2xl font-bold text-purple-600">Rp {ringkasanPinjaman.totalPinjaman.toLocaleString('id-ID')}</p>
                   <p className="text-xs text-gray-400">(aktif + lunas)</p>
                 </div>
                 <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
                   <p className="text-sm text-gray-500">Total Sisa Tagihan</p>
-                  <p className="text-2xl font-bold text-orange-600">Rp {ringkasanPinjaman.totalSisa.toLocaleString('id-ID')}</p>
+                  <p className="text-xl sm:text-2xl font-bold text-orange-600">Rp {ringkasanPinjaman.totalSisa.toLocaleString('id-ID')}</p>
                   <p className="text-xs text-gray-400">(hanya pinjaman aktif)</p>
                 </div>
                 <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
@@ -537,55 +541,58 @@ export default function LaporanPage() {
                   <p className="text-2xl font-bold text-blue-600">{ringkasanPinjaman.aktif}</p>
                 </div>
                 <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
-                  <p className="text-sm text-gray-500">Pinjaman Ditolak</p>
-                  <p className="text-2xl font-bold text-red-600">{ringkasanPinjaman.ditolak}</p>
+                  <p className="text-sm text-gray-500">Pinjaman Lunas</p>
+                  <p className="text-2xl font-bold text-green-600">{ringkasanPinjaman.lunas}</p>
                 </div>
               </div>
             )}
+            
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50 dark:bg-gray-700">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">No</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Peminjam</th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Jumlah</th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Sisa</th>
-                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Status</th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Angsuran/Bulan</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                    {laporanPinjaman.length === 0 ? (
+              <div className="overflow-x-auto -mx-4 sm:mx-0">
+                <div className="min-w-[700px] sm:min-w-full px-4 sm:px-0">
+                  <table className="w-full">
+                    <thead className="bg-gray-50 dark:bg-gray-700">
                       <tr>
-                        <td colSpan={6} className="px-6 py-8 text-center text-gray-500">Belum ada data pinjaman</td>
+                        <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">No</th>
+                        <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Peminjam</th>
+                        <th className="px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Jumlah</th>
+                        <th className="px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Sisa</th>
+                        <th className="px-4 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Status</th>
+                        <th className="px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Angsuran/Bulan</th>
                       </tr>
-                    ) : (
-                      laporanPinjaman.map((item, idx) => (
-                        <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                          <td className="px-6 py-4 text-sm text-gray-500">{idx + 1}</td>
-                          <td className="px-6 py-4 text-sm font-medium text-gray-900">{item.userNama}</td>
-                          <td className="px-6 py-4 text-sm text-right">Rp {item.jumlah.toLocaleString('id-ID')}</td>
-                          <td className="px-6 py-4 text-sm text-right text-orange-600">
-                            {item.status === 'ditolak' ? 'Rp 0' : `Rp ${item.sisa.toLocaleString('id-ID')}`}
-                          </td>
-                          <td className="px-6 py-4 text-center">{getStatusBadge(item.status)}</td>
-                          <td className="px-6 py-4 text-sm text-right">Rp {item.angsuranPerBulan.toLocaleString('id-ID')}</td>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                      {laporanPinjaman.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="px-4 sm:px-6 py-8 text-center text-gray-500">Belum ada data pinjaman</td>
                         </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
+                      ) : (
+                        laporanPinjaman.map((item, idx) => (
+                          <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                            <td className="px-4 sm:px-6 py-3 sm:py-4 text-sm text-gray-500">{idx + 1}</td>
+                            <td className="px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium text-gray-900 dark:text-white">{item.userNama}</td>
+                            <td className="px-4 sm:px-6 py-3 sm:py-4 text-sm text-right">Rp {item.jumlah.toLocaleString('id-ID')}</td>
+                            <td className="px-4 sm:px-6 py-3 sm:py-4 text-sm text-right text-orange-600">
+                              {item.status === 'ditolak' ? 'Rp 0' : `Rp ${item.sisa.toLocaleString('id-ID')}`}
+                            </td>
+                            <td className="px-4 sm:px-6 py-3 sm:py-4 text-center">{getStatusBadge(item.status)}</td>
+                            <td className="px-4 sm:px-6 py-3 sm:py-4 text-sm text-right">Rp {item.angsuranPerBulan.toLocaleString('id-ID')}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* LAPORAN CASH BULANAN */}
+        {/* LAPORAN CASH BULANAN - MODIFIKASI RESPONSIVE */}
         {activeTab === 'cash' && (
           <div>
             {isPengelola && selectedAnggota === 'all' && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                 <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
                   <p className="text-sm text-gray-500">Sudah Bayar</p>
                   <p className="text-2xl font-bold text-green-600">{ringkasanCash.totalSudahBayar} orang</p>
@@ -596,55 +603,58 @@ export default function LaporanPage() {
                 </div>
                 <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
                   <p className="text-sm text-gray-500">Terkumpul</p>
-                  <p className="text-2xl font-bold text-blue-600">Rp {ringkasanCash.totalTerkumpul.toLocaleString('id-ID')}</p>
+                  <p className="text-xl sm:text-2xl font-bold text-blue-600">Rp {ringkasanCash.totalTerkumpul.toLocaleString('id-ID')}</p>
                 </div>
               </div>
             )}
+            
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50 dark:bg-gray-700">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">No</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nama</th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Jumlah</th>
-                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tanggal Bayar</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                    {laporanCash.length === 0 ? (
+              <div className="overflow-x-auto -mx-4 sm:mx-0">
+                <div className="min-w-[600px] sm:min-w-full px-4 sm:px-0">
+                  <table className="w-full">
+                    <thead className="bg-gray-50 dark:bg-gray-700">
                       <tr>
-                        <td colSpan={5} className="px-6 py-8 text-center text-gray-500">Belum ada data cash bulanan untuk periode ini</td>
+                        <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">No</th>
+                        <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nama</th>
+                        <th className="px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Jumlah</th>
+                        <th className="px-4 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Status</th>
+                        <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tanggal Bayar</th>
                       </tr>
-                    ) : (
-                      laporanCash.map((item, idx) => (
-                        <tr key={item.userId} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                          <td className="px-6 py-4 text-sm text-gray-500">{idx + 1}</td>
-                          <td className="px-6 py-4 text-sm font-medium text-gray-900">{item.userNama}</td>
-                          <td className="px-6 py-4 text-sm text-right">Rp {item.jumlah.toLocaleString('id-ID')}</td>
-                          <td className="px-6 py-4 text-center">
-                            <span className={`px-2 py-1 text-xs rounded-full ${item.statusBayar === 'lunas' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                              {item.statusBayar === 'lunas' ? 'Lunas' : 'Belum'}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 text-sm text-gray-500">{item.tanggalBayar?.toLocaleDateString('id-ID') || '-'}</td>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                      {laporanCash.length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="px-4 sm:px-6 py-8 text-center text-gray-500">Belum ada data cash bulanan untuk periode ini</td>
                         </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
+                      ) : (
+                        laporanCash.map((item, idx) => (
+                          <tr key={item.userId} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                            <td className="px-4 sm:px-6 py-3 sm:py-4 text-sm text-gray-500">{idx + 1}</td>
+                            <td className="px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium text-gray-900 dark:text-white">{item.userNama}</td>
+                            <td className="px-4 sm:px-6 py-3 sm:py-4 text-sm text-right">Rp {item.jumlah.toLocaleString('id-ID')}</td>
+                            <td className="px-4 sm:px-6 py-3 sm:py-4 text-center">
+                              <span className={`px-2 py-1 text-xs rounded-full ${item.statusBayar === 'lunas' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                {item.statusBayar === 'lunas' ? 'Lunas' : 'Belum'}
+                              </span>
+                            </td>
+                            <td className="px-4 sm:px-6 py-3 sm:py-4 text-sm text-gray-500">{item.tanggalBayar?.toLocaleDateString('id-ID') || '-'}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* LAPORAN ARISAN */}
+        {/* LAPORAN ARISAN - MODIFIKASI RESPONSIVE */}
         {activeTab === 'arisan' && (
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 sm:p-6">
             <div className="flex items-center gap-2 mb-4">
               <Trophy size={20} className="text-yellow-500" />
-              <h2 className="text-lg font-semibold">Riwayat Arisan</h2>
+              <h2 className="text-lg font-semibold dark:text-white">Riwayat Arisan</h2>
             </div>
             {loading ? (
               <div className="flex justify-center py-8">
@@ -655,29 +665,31 @@ export default function LaporanPage() {
                 <p className="text-gray-500">Belum ada sesi arisan</p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50 dark:bg-gray-700">
-                    <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">No</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Periode</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pemenang</th>
-                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Potongan</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tanggal</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                    {sesiArisan.map((sesi, idx) => (
-                      <tr key={sesi.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                        <td className="px-4 py-3 text-sm text-gray-500">{idx + 1}</td>
-                        <td className="px-4 py-3 text-sm font-medium text-gray-900">{sesi.periode}</td>
-                        <td className="px-4 py-3 text-sm text-purple-600 font-medium">{sesi.pemenangNama}</td>
-                        <td className="px-4 py-3 text-sm text-right">Rp {sesi.jumlahPotongan?.toLocaleString('id-ID')}</td>
-                        <td className="px-4 py-3 text-sm text-gray-500">{sesi.createdAt?.toLocaleDateString('id-ID')}</td>
+              <div className="overflow-x-auto -mx-4 sm:mx-0">
+                <div className="min-w-[500px] sm:min-w-full px-4 sm:px-0">
+                  <table className="w-full">
+                    <thead className="bg-gray-50 dark:bg-gray-700">
+                      <tr>
+                        <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">No</th>
+                        <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Periode</th>
+                        <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pemenang</th>
+                        <th className="px-3 sm:px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Potongan</th>
+                        <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tanggal</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                      {sesiArisan.map((sesi, idx) => (
+                        <tr key={sesi.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                          <td className="px-3 sm:px-4 py-3 text-sm text-gray-500">{idx + 1}</td>
+                          <td className="px-3 sm:px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">{sesi.periode}</td>
+                          <td className="px-3 sm:px-4 py-3 text-sm text-purple-600 font-medium">{sesi.pemenangNama}</td>
+                          <td className="px-3 sm:px-4 py-3 text-sm text-right">Rp {sesi.jumlahPotongan?.toLocaleString('id-ID')}</td>
+                          <td className="px-3 sm:px-4 py-3 text-sm text-gray-500">{sesi.createdAt?.toLocaleDateString('id-ID')}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
           </div>
