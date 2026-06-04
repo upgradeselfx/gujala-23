@@ -51,6 +51,8 @@ export default function LoginPage() {
     
     // Backup: set inline style background untuk memastikan gelap
     document.body.style.backgroundColor = '#0a0a0a';
+    document.body.style.margin = '0';
+    document.body.style.padding = '0';
     
     return () => {
       // Jangan hapus dark mode saat unmount
@@ -314,8 +316,8 @@ export default function LoginPage() {
                       <div>
                         {/* Robot Eyes */}
                         <div style={{ display: 'flex', gap: '12px', marginBottom: '8px' }}>
-                          <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#000000', animation: 'pulse-garang 1.5s ease-in-out infinite', boxShadow: '0 0 8px #ef4444' }} />
-                          <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#0e0808', animation: 'pulse-garang 1.5s ease-in-out infinite 0.3s', boxShadow: '0 0 8px #ef4444' }} />
+                          <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#ef4444', animation: 'pulse-garang 1.5s ease-in-out infinite', boxShadow: '0 0 8px #ef4444' }} />
+                          <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#ef4444', animation: 'pulse-garang 1.5s ease-in-out infinite 0.3s', boxShadow: '0 0 8px #ef4444' }} />
                         </div>
                         {/* Robot Mouth */}
                         <div style={{ display: 'flex', gap: '2px', justifyContent: 'center' }}>
@@ -400,10 +402,18 @@ export default function LoginPage() {
 
             {/* Login Form */}
             <form onSubmit={handleSubmit}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 {/* Email Field */}
                 <div>
-                  <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#f87171', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <label style={{ 
+                    fontSize: '14px', 
+                    fontWeight: '500', 
+                    color: '#f87171', 
+                    marginBottom: '8px', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '8px' 
+                  }}>
                     <Mail size={14} />
                     Alamat Email
                   </label>
@@ -421,9 +431,10 @@ export default function LoginPage() {
                         borderRadius: '12px',
                         color: 'white',
                         outline: 'none',
-                        transition: 'all 0.3s'
+                        transition: 'all 0.3s',
+                        fontSize: '16px'
                       }}
-                      placeholder="email@gmail.com"
+                      placeholder="kombatan@guajala.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       onFocus={(e) => e.currentTarget.style.borderColor = '#ef4444'}
@@ -435,9 +446,17 @@ export default function LoginPage() {
 
                 {/* Password Field */}
                 <div>
-                  <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#f87171', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <label style={{ 
+                    fontSize: '14px', 
+                    fontWeight: '500', 
+                    color: '#f87171', 
+                    marginBottom: '8px', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '8px' 
+                  }}>
                     <Key size={14} />
-                    Password
+                    Kunci Akses
                   </label>
                   <div style={{ position: 'relative' }}>
                     <input
@@ -453,7 +472,8 @@ export default function LoginPage() {
                         borderRadius: '12px',
                         color: 'white',
                         outline: 'none',
-                        transition: 'all 0.3s'
+                        transition: 'all 0.3s',
+                        fontSize: '16px'
                       }}
                       placeholder="••••••••"
                       value={password}
@@ -465,7 +485,20 @@ export default function LoginPage() {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: '#ef444480' }}
+                      style={{ 
+                        position: 'absolute', 
+                        right: '12px', 
+                        top: '50%', 
+                        transform: 'translateY(-50%)', 
+                        color: '#ef444480',
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: '4px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
                     >
                       {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
@@ -475,14 +508,38 @@ export default function LoginPage() {
 
               {/* Attempts Warning */}
               {!blockedUntil && loginAttempts > 0 && loginAttempts < 5 && (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '14px', color: '#fb923c', background: 'rgba(120,53,15,0.3)', borderRadius: '8px', padding: '8px 12px', marginTop: '16px', border: '1px solid rgba(200,100,0,0.3)' }}>
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  gap: '8px', 
+                  fontSize: '14px', 
+                  color: '#fb923c', 
+                  background: 'rgba(120,53,15,0.3)', 
+                  borderRadius: '8px', 
+                  padding: '8px 12px', 
+                  marginTop: '20px', 
+                  border: '1px solid rgba(200,100,0,0.3)' 
+                }}>
                   <Shield size={14} />
                   ⚠️ Kesempatan tersisa: {remainingAttempts}
                 </div>
               )}
 
               {blockedUntil && Date.now() < blockedUntil && (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '14px', color: '#fca5a5', background: 'rgba(127,29,29,0.3)', borderRadius: '8px', padding: '8px 12px', marginTop: '16px', border: '1px solid rgba(200,0,0,0.3)' }}>
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  gap: '8px', 
+                  fontSize: '14px', 
+                  color: '#fca5a5', 
+                  background: 'rgba(127,29,29,0.3)', 
+                  borderRadius: '8px', 
+                  padding: '8px 12px', 
+                  marginTop: '20px', 
+                  border: '1px solid rgba(200,0,0,0.3)' 
+                }}>
                   <AlertCircle size={14} />
                   ⛔ Akun diblokir sementara. Coba lagi setelah 1 menit.
                 </div>
@@ -502,6 +559,7 @@ export default function LoginPage() {
                   background: 'linear-gradient(135deg, #991b1b, #7f1d1d, #450a0a)',
                   color: 'white',
                   fontWeight: '600',
+                  fontSize: '16px',
                   border: 'none',
                   cursor: 'pointer',
                   transition: 'all 0.3s'
@@ -517,7 +575,7 @@ export default function LoginPage() {
                   {loading ? (
                     <>
                       <div style={{ width: '20px', height: '20px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-                      Memasuki Aplikasi...
+                      Memasuki markas...
                     </>
                   ) : (
                     <>
@@ -529,17 +587,17 @@ export default function LoginPage() {
               </button>
 
               {/* Links */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px', textAlign: 'center' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '20px', textAlign: 'center' }}>
                 <Link 
                   href="/register" 
-                  style={{ fontSize: '14px', color: '#f87171', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                  style={{ fontSize: '14px', color: '#f87171', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', textDecoration: 'none' }}
                 >
                   <Swords size={14} />
                   Belum punya akun? Daftar
                 </Link>
                 <Link 
                   href="/login/forgot-password" 
-                  style={{ fontSize: '14px', color: '#f87171', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                  style={{ fontSize: '14px', color: '#f87171', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', textDecoration: 'none' }}
                 >
                   <Key size={14} />
                   Lupa password?
