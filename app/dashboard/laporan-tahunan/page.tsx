@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { generateLaporanTahunan, LaporanTahunan } from '@/lib/laporanTahunan';
-import { Calendar, Printer, Users, Wallet, HandCoins, Trophy, FileText } from 'lucide-react';
+import { Calendar, Download, Printer, TrendingUp, Users, Wallet, HandCoins, Trophy, FileText } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
+import html2pdf from 'html2pdf.js';
 
 export default function LaporanTahunanPage() {
   const { user, userData } = useAuth();
@@ -35,6 +36,32 @@ export default function LaporanTahunanPage() {
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleExportPDF = () => {
+    const element = document.getElementById('laporan-tahunan-content');
+    if (!element) {
+      toast.error('Konten laporan tidak ditemukan');
+      return;
+    }
+
+    const opt = {
+      margin: [10, 10, 10, 10],
+      filename: `laporan_tahunan_${tahun}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, logging: false },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+    };
+
+    toast.loading('Sedang memproses PDF...', { id: 'pdf-loading' });
+    
+    // Menggunakan 'as any' untuk menghindari error type dari html2pdf
+    (html2pdf() as any).set(opt).from(element).save().then(() => {
+      toast.success('PDF berhasil diunduh', { id: 'pdf-loading' });
+    }).catch((err: any) => {
+      console.error(err);
+      toast.error('Gagal membuat PDF', { id: 'pdf-loading' });
+    });
   };
 
   if (!isPengelola) {
@@ -81,7 +108,13 @@ export default function LaporanTahunanPage() {
             onClick={handlePrint}
             className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2 transition"
           >
-            <Printer size={16} /> Cetak / PDF
+            <Printer size={16} /> Cetak
+          </button>
+          <button
+            onClick={handleExportPDF}
+            className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2 transition"
+          >
+            <FileText size={16} /> Export PDF
           </button>
         </div>
       </div>
@@ -177,7 +210,13 @@ export default function LaporanTahunanPage() {
             <h3 className="text-lg font-semibold mb-3">Rekap Bulanan {laporan.tahun}</h3>
             <table className="w-full text-sm">
               <thead className="bg-gray-50 dark:bg-gray-700">
-                <tr><th className="p-2 text-left">Bulan</th><th className="p-2 text-right">Setor</th><th className="p-2 text-right">Tarik</th><th className="p-2 text-right">Pinjaman Baru</th><th className="p-2 text-right">Cash</th></tr>
+                <tr>
+                  <th className="p-2 text-left">Bulan</th>
+                  <th className="p-2 text-right">Setor</th>
+                  <th className="p-2 text-right">Tarik</th>
+                  <th className="p-2 text-right">Pinjaman Baru</th>
+                  <th className="p-2 text-right">Cash</th>
+                </tr>
               </thead>
               <tbody>
                 {laporan.rekapBulanan.map((item, idx) => (
@@ -193,6 +232,7 @@ export default function LaporanTahunanPage() {
             </table>
           </div>
 
+          {/* Footer */}
           <div className="text-center text-xs text-gray-400 border-t pt-4">
             <p>Laporan ini digenerate secara otomatis oleh sistem GUJALA 23</p>
           </div>
