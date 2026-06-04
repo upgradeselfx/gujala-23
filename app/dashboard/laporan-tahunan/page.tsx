@@ -3,9 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { generateLaporanTahunan, LaporanTahunan } from '@/lib/laporanTahunan';
-import { Calendar, Download, Printer, TrendingUp, Users, Wallet, HandCoins, Trophy, FileText } from 'lucide-react';
+import { Calendar, Printer, Users, Wallet, HandCoins, Trophy, FileText } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
-import html2pdf from 'html2pdf.js';
 
 export default function LaporanTahunanPage() {
   const { user, userData } = useAuth();
@@ -36,32 +35,6 @@ export default function LaporanTahunanPage() {
 
   const handlePrint = () => {
     window.print();
-  };
-
-  const handleExportPDF = () => {
-    const element = document.getElementById('laporan-tahunan-content');
-    if (!element) {
-      toast.error('Konten laporan tidak ditemukan');
-      return;
-    }
-
-    const opt = {
-      margin: [10, 10, 10, 10],
-      filename: `laporan_tahunan_${tahun}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, logging: false },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
-    };
-
-    toast.loading('Sedang memproses PDF...', { id: 'pdf-loading' });
-    
-    // Menggunakan 'as any' untuk menghindari error type dari html2pdf
-    (html2pdf() as any).set(opt).from(element).save().then(() => {
-      toast.success('PDF berhasil diunduh', { id: 'pdf-loading' });
-    }).catch((err: any) => {
-      console.error(err);
-      toast.error('Gagal membuat PDF', { id: 'pdf-loading' });
-    });
   };
 
   if (!isPengelola) {
@@ -108,13 +81,7 @@ export default function LaporanTahunanPage() {
             onClick={handlePrint}
             className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2 transition"
           >
-            <Printer size={16} /> Cetak
-          </button>
-          <button
-            onClick={handleExportPDF}
-            className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2 transition"
-          >
-            <FileText size={16} /> Export PDF
+            <Printer size={16} /> Cetak / Save as PDF
           </button>
         </div>
       </div>
