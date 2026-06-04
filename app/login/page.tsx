@@ -316,8 +316,8 @@ export default function LoginPage() {
                       <div>
                         {/* Robot Eyes */}
                         <div style={{ display: 'flex', gap: '12px', marginBottom: '8px' }}>
-                          <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#ef4444', animation: 'pulse-garang 1.5s ease-in-out infinite', boxShadow: '0 0 8px #ef4444' }} />
-                          <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#ef4444', animation: 'pulse-garang 1.5s ease-in-out infinite 0.3s', boxShadow: '0 0 8px #ef4444' }} />
+                          <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#000000', animation: 'pulse-garang 1.5s ease-in-out infinite', boxShadow: '0 0 8px #ef4444' }} />
+                          <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#000000', animation: 'pulse-garang 1.5s ease-in-out infinite 0.3s', boxShadow: '0 0 8px #ef4444' }} />
                         </div>
                         {/* Robot Mouth */}
                         <div style={{ display: 'flex', gap: '2px', justifyContent: 'center' }}>
@@ -434,7 +434,7 @@ export default function LoginPage() {
                         transition: 'all 0.3s',
                         fontSize: '16px'
                       }}
-                      placeholder="kombatan@guajala.com"
+                      placeholder="email@gmail.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       onFocus={(e) => e.currentTarget.style.borderColor = '#ef4444'}
@@ -456,7 +456,7 @@ export default function LoginPage() {
                     gap: '8px' 
                   }}>
                     <Key size={14} />
-                    Kunci Akses
+                    Password
                   </label>
                   <div style={{ position: 'relative' }}>
                     <input
@@ -575,7 +575,7 @@ export default function LoginPage() {
                   {loading ? (
                     <>
                       <div style={{ width: '20px', height: '20px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-                      Memasuki markas...
+                      Memasuki Sistem...
                     </>
                   ) : (
                     <>
