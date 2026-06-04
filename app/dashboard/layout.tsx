@@ -6,9 +6,8 @@ import { useEffect, useState } from 'react';
 import Sidebar from '@/components/Sidebar';
 import Notification from '@/components/Notification';
 import { Menu, Sparkles } from 'lucide-react';
-import { AuthProvider } from '@/context/AuthContext';
 
-function DashboardContent({ children }: { children: React.ReactNode }) {
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -95,17 +94,5 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         </main>
       </div>
     </div>
-  );
-}
-
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return (
-    <AuthProvider>
-      <DashboardContent>{children}</DashboardContent>
-    </AuthProvider>
   );
 }
