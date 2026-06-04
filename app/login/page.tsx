@@ -185,7 +185,7 @@ export default function LoginPage() {
               <h2 style={{ fontSize: '32px', fontWeight: 'bold', background: 'linear-gradient(135deg, #ef4444, #dc2626, #b91c1c)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                 GUJALA 23
               </h2>
-              <div style={{ marginTop: '16px', color: '#f87171' }}>Memuat markas...</div>
+              <div style={{ marginTop: '16px', color: '#f87171' }}>Memuat Sistem...</div>
             </div>
           </div>
         </div>
