@@ -2,8 +2,11 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { doc, getDoc } from 'firebase/firestore';
+import { db, auth as firebaseAuth } from '@/app/firebase/client';
+import { logActivity } from '@/lib/activityLogger';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -20,6 +23,21 @@ export default function LoginPage() {
 
     try {
       await login(email, password);
+      
+      // Catat aktivitas login
+      const user = firebaseAuth.currentUser;
+      if (user) {
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        const userRole = userDoc.exists() ? userDoc.data().role : 'anggota';
+        await logActivity(
+          user.uid,
+          user.email?.split('@')[0] || 'User',
+          userRole,
+          'login',
+          `Login berhasil menggunakan email ${email}`
+        );
+      }
+      
       router.push('/dashboard');
     } catch (err: any) {
       console.error(err);
@@ -38,27 +56,23 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            GUJALA 23
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Silakan login ke akun Anda
-          </p>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4">
+      <div className="max-w-md w-full space-y-8 bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg">
+        <div className="text-center">
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">GUJALA 23</h2>
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">Silakan login ke akun Anda</p>
         </div>
-        
+
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (
-            <div className="bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded relative">
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-200 px-4 py-3 rounded relative">
               {error}
             </div>
           )}
-          
-          <div className="rounded-md shadow-sm -space-y-px">
+
+          <div className="space-y-4">
             <div>
-              <label htmlFor="email" className="sr-only">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Email
               </label>
               <input
@@ -66,14 +80,14 @@ export default function LoginPage() {
                 name="email"
                 type="email"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Email"
+                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 sm:text-sm"
+                placeholder="email@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
             </div>
             <div>
-              <label htmlFor="password" className="sr-only">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Password
               </label>
               <input
@@ -81,7 +95,7 @@ export default function LoginPage() {
                 name="password"
                 type="password"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 sm:text-sm"
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -99,17 +113,13 @@ export default function LoginPage() {
             </button>
           </div>
 
-          <div className="text-center mt-4">
-            <Link href="/login/forgot-password" className="text-sm text-blue-600 hover:underline">
-                Lupa password?
-            </Link>
-            </div>
-
-          <div className="text-center">
+          <div className="flex items-center justify-between">
             <Link href="/register" className="text-sm text-blue-600 hover:text-blue-500">
               Belum punya akun? Daftar
             </Link>
-
+            <Link href="/login/forgot-password" className="text-sm text-blue-600 hover:text-blue-500">
+              Lupa password?
+            </Link>
           </div>
         </form>
       </div>

@@ -1,4 +1,3 @@
-// app/dashboard/pinjaman/page.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -17,7 +16,7 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import toast, { Toaster } from 'react-hot-toast';
-import { HandCoins, Plus, Eye, RefreshCw, CheckCircle, Clock, XCircle } from 'lucide-react';
+import { HandCoins, Plus, RefreshCw, CheckCircle, Clock, XCircle } from 'lucide-react';
 
 type Pinjaman = {
   id: string;
@@ -50,50 +49,34 @@ export default function PinjamanPage() {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState<'ajukan' | 'bayar' | 'setujui' | 'tolak' | null>(null);
   const [selectedPinjaman, setSelectedPinjaman] = useState<Pinjaman | null>(null);
-  const [formData, setFormData] = useState({
-    jumlah: '',
-    tenor: '',
-  });
-  const [bayarAmount, setBayarAmount] = useState('');
+  const [formData, setFormData] = useState({ jumlah: '', tenor: '' });
+  const [bayarOption, setBayarOption] = useState<'1' | '2' | '3' | '4' | 'lunas'>('1');
   const [alasanTolak, setAlasanTolak] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>('all');
 
   const isPengelola = userData?.role === 'pengelola';
 
-  // Ambil daftar anggota (untuk pengelola)
   const fetchAnggota = async () => {
     if (!isPengelola) return;
     try {
       const querySnapshot = await getDocs(collection(db, 'users'));
-      const data = querySnapshot.docs.map(doc => ({
-        uid: doc.id,
-        nama: doc.data().nama,
-        email: doc.data().email
-      }));
+      const data = querySnapshot.docs.map(doc => ({ uid: doc.id, nama: doc.data().nama, email: doc.data().email }));
       setAnggota(data);
     } catch (error) {
       console.error(error);
     }
   };
 
-  // Ambil data pinjaman
   const fetchPinjaman = async () => {
     if (!user) return;
     setLoading(true);
     try {
       let pinjamanQuery;
       if (isPengelola) {
-        pinjamanQuery = query(
-          collection(db, 'pinjaman'),
-          orderBy('diajukanPada', 'desc')
-        );
+        pinjamanQuery = query(collection(db, 'pinjaman'), orderBy('diajukanPada', 'desc'));
       } else {
-        pinjamanQuery = query(
-          collection(db, 'pinjaman'),
-          where('userId', '==', user.uid),
-          orderBy('diajukanPada', 'desc')
-        );
+        pinjamanQuery = query(collection(db, 'pinjaman'), where('userId', '==', user.uid), orderBy('diajukanPada', 'desc'));
       }
 
       const pinjamanSnap = await getDocs(pinjamanQuery);
@@ -140,7 +123,6 @@ export default function PinjamanPage() {
     }
   }, [user]);
 
-  // Hitung total pinjaman dengan bunga flat 5%
   const hitungTotal = (jumlah: number, tenor: number) => {
     const bunga = jumlah * 0.05;
     const total = jumlah + bunga;
@@ -148,7 +130,6 @@ export default function PinjamanPage() {
     return { total, angsuranPerBulan, bunga };
   };
 
-  // Ajukan pinjaman
   const handleAjukan = async () => {
     const jumlahNum = parseInt(formData.jumlah);
     const tenorNum = parseInt(formData.tenor);
@@ -165,7 +146,6 @@ export default function PinjamanPage() {
     setSubmitting(true);
     try {
       const { total, angsuranPerBulan, bunga } = hitungTotal(jumlahNum, tenorNum);
-
       await addDoc(collection(db, 'pinjaman'), {
         userId: user!.uid,
         userNama: userData?.nama || '',
@@ -178,7 +158,6 @@ export default function PinjamanPage() {
         status: 'pending',
         diajukanPada: Timestamp.now(),
       });
-
       toast.success('Pinjaman berhasil diajukan! Menunggu persetujuan pengelola.');
       setModalOpen(null);
       setFormData({ jumlah: '', tenor: '' });
@@ -191,17 +170,12 @@ export default function PinjamanPage() {
     }
   };
 
-  // Setujui pinjaman (hanya pengelola)
   const handleSetujui = async () => {
     if (!selectedPinjaman) return;
     setSubmitting(true);
     try {
       const pinjamanRef = doc(db, 'pinjaman', selectedPinjaman.id);
-      await updateDoc(pinjamanRef, {
-        status: 'aktif',
-        disetujuiPada: Timestamp.now(),
-      });
-
+      await updateDoc(pinjamanRef, { status: 'aktif', disetujuiPada: Timestamp.now() });
       toast.success('Pinjaman disetujui');
       setModalOpen(null);
       setSelectedPinjaman(null);
@@ -214,18 +188,20 @@ export default function PinjamanPage() {
     }
   };
 
-  // Tolak pinjaman (hanya pengelola)
   const handleTolak = async () => {
     if (!selectedPinjaman) return;
+    
+    if (!confirm(`Yakin ingin menolak pinjaman ${selectedPinjaman.userNama}?`)) return;
+    
     setSubmitting(true);
     try {
       const pinjamanRef = doc(db, 'pinjaman', selectedPinjaman.id);
       await updateDoc(pinjamanRef, {
         status: 'ditolak',
+        sisa: 0,
         ditolakPada: Timestamp.now(),
         alasanTolak: alasanTolak || 'Tidak disetujui oleh pengelola',
       });
-
       toast.success('Pinjaman ditolak');
       setModalOpen(null);
       setSelectedPinjaman(null);
@@ -239,17 +215,24 @@ export default function PinjamanPage() {
     }
   };
 
-  // Bayar angsuran
+  // ========== PEMBAYARAN ANGSURAN OLEH PENGELOLA ==========
   const handleBayar = async () => {
     if (!selectedPinjaman) return;
-    const bayarNum = parseInt(bayarAmount);
-    if (isNaN(bayarNum) || bayarNum <= 0) {
-      toast.error('Masukkan jumlah bayar yang valid');
-      return;
+    
+    let bayarNum = 0;
+    let bulanDibayar = '';
+    
+    if (bayarOption === 'lunas') {
+      bayarNum = selectedPinjaman.sisa;
+      bulanDibayar = 'Lunas';
+    } else {
+      const bulan = parseInt(bayarOption);
+      bayarNum = selectedPinjaman.angsuranPerBulan * bulan;
+      bulanDibayar = `${bulan} bulan`;
     }
-
+    
     if (bayarNum > selectedPinjaman.sisa) {
-      toast.error('Jumlah bayar melebihi sisa pinjaman');
+      toast.error(`Jumlah bayar melebihi sisa pinjaman (Sisa: Rp ${selectedPinjaman.sisa.toLocaleString('id-ID')})`);
       return;
     }
 
@@ -257,32 +240,30 @@ export default function PinjamanPage() {
     try {
       const pinjamanRef = doc(db, 'pinjaman', selectedPinjaman.id);
       let newSisa = selectedPinjaman.sisa - bayarNum;
-
-      const updateData: any = {
-        sisa: newSisa,
-      };
-
+      const updateData: any = { sisa: newSisa };
+      
       if (newSisa === 0) {
         updateData.status = 'lunas';
         updateData.lunasPada = Timestamp.now();
       }
-
+      
       await updateDoc(pinjamanRef, updateData);
-
-      // Catat transaksi pembayaran
+      
       await addDoc(collection(db, 'transaksi_pinjaman'), {
         pinjamanId: selectedPinjaman.id,
         userId: selectedPinjaman.userId,
         userNama: selectedPinjaman.userNama,
         jumlah: bayarNum,
+        bulanDibayar: bulanDibayar,
         sisaSetelah: newSisa,
         timestamp: Timestamp.now(),
+        dibayarOleh: userData?.nama || 'Pengelola',
       });
-
-      toast.success(newSisa === 0 ? 'Pinjaman lunas! 🎉' : 'Pembayaran berhasil');
+      
+      toast.success(newSisa === 0 ? '🎉 Pinjaman lunas! 🎉' : `✅ Pembayaran ${bulanDibayar} berhasil`);
       setModalOpen(null);
       setSelectedPinjaman(null);
-      setBayarAmount('');
+      setBayarOption('1');
       fetchPinjaman();
     } catch (error) {
       console.error(error);
@@ -294,22 +275,24 @@ export default function PinjamanPage() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'pending':
-        return <span className="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 flex items-center gap-1"><Clock size={12} /> Menunggu</span>;
-      case 'aktif':
-        return <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 flex items-center gap-1"><CheckCircle size={12} /> Aktif</span>;
-      case 'lunas':
-        return <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 flex items-center gap-1"><CheckCircle size={12} /> Lunas</span>;
-      case 'ditolak':
-        return <span className="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 flex items-center gap-1"><XCircle size={12} /> Ditolak</span>;
-      default:
-        return null;
+      case 'pending': return <span className="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800 flex items-center gap-1"><Clock size={12} /> Menunggu</span>;
+      case 'aktif': return <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800 flex items-center gap-1"><CheckCircle size={12} /> Aktif</span>;
+      case 'lunas': return <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800 flex items-center gap-1"><CheckCircle size={12} /> Lunas</span>;
+      case 'ditolak': return <span className="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800 flex items-center gap-1"><XCircle size={12} /> Ditolak</span>;
+      default: return null;
     }
   };
 
-  const filteredPinjaman = filterStatus === 'all' 
-    ? pinjaman 
-    : pinjaman.filter(p => p.status === filterStatus);
+  const filteredPinjaman = filterStatus === 'all' ? pinjaman : pinjaman.filter(p => p.status === filterStatus);
+
+  // Cek apakah opsi pembayaran valid
+  const isPaymentValid = () => {
+    if (!selectedPinjaman) return false;
+    if (bayarOption === 'lunas') return true;
+    const bulan = parseInt(bayarOption);
+    const totalBayar = selectedPinjaman.angsuranPerBulan * bulan;
+    return selectedPinjaman.sisa >= totalBayar;
+  };
 
   if (!user) return null;
 
@@ -317,150 +300,79 @@ export default function PinjamanPage() {
     <div className="p-6">
       <Toaster position="top-right" />
 
-      {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Pinjaman</h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">
-            Ajukan pinjaman, bayar angsuran, atau kelola pinjaman anggota
+            {isPengelola ? 'Kelola pinjaman anggota' : 'Ajukan pinjaman dan pantau status'}
           </p>
         </div>
         <div className="flex gap-2">
-          <button
-            onClick={fetchPinjaman}
-            className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
-            title="Refresh"
-          >
+          <button onClick={fetchPinjaman} className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50" title="Refresh">
             <RefreshCw size={18} />
           </button>
           {!isPengelola && (
-            <button
-              onClick={() => setModalOpen('ajukan')}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
-            >
-              <Plus size={18} />
-              Ajukan Pinjaman
+            <button onClick={() => setModalOpen('ajukan')} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2">
+              <Plus size={18} /> Ajukan Pinjaman
             </button>
           )}
         </div>
       </div>
 
-      {/* Filter Status */}
       <div className="flex gap-2 mb-4 flex-wrap">
         {['all', 'pending', 'aktif', 'lunas', 'ditolak'].map((status) => (
-          <button
-            key={status}
-            onClick={() => setFilterStatus(status)}
-            className={`px-3 py-1.5 text-sm rounded-lg transition ${
-              filterStatus === status
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200'
-            }`}
-          >
+          <button key={status} onClick={() => setFilterStatus(status)} className={`px-3 py-1.5 text-sm rounded-lg transition ${
+            filterStatus === status ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          }`}>
             {status === 'all' ? 'Semua' : status === 'pending' ? 'Menunggu' : status === 'aktif' ? 'Aktif' : status === 'lunas' ? 'Lunas' : 'Ditolak'}
           </button>
         ))}
       </div>
 
-      {/* Daftar Pinjaman */}
       {loading ? (
-        <div className="flex justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        </div>
+        <div className="flex justify-center py-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>
       ) : filteredPinjaman.length === 0 ? (
-        <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-xl">
+        <div className="text-center py-12 bg-gray-50 rounded-xl">
           <HandCoins size={48} className="mx-auto text-gray-400 mb-3" />
-          <p className="text-gray-500 dark:text-gray-400">Belum ada data pinjaman</p>
+          <p className="text-gray-500">Belum ada data pinjaman</p>
           {!isPengelola && (
-            <button
-              onClick={() => setModalOpen('ajukan')}
-              className="mt-3 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              Ajukan Pinjaman
-            </button>
+            <button onClick={() => setModalOpen('ajukan')} className="mt-3 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Ajukan Pinjaman</button>
           )}
         </div>
       ) : (
         <div className="space-y-3">
           {filteredPinjaman.map((p) => (
-            <div
-              key={p.id}
-              className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4"
-            >
+            <div key={p.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border p-4">
               <div className="flex justify-between items-start mb-3">
                 <div>
-                  {isPengelola && (
-                    <p className="text-sm text-gray-500">{p.userNama}</p>
-                  )}
-                  <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                    Rp {p.jumlah.toLocaleString('id-ID')}
-                  </p>
-                  <p className="text-xs text-gray-400">
-                    Tenor: {p.tenor} bulan | Angsuran: Rp {p.angsuranPerBulan.toLocaleString('id-ID')}/bulan
-                  </p>
-                  {p.status === 'ditolak' && p.alasanTolak && (
-                    <p className="text-xs text-red-500 mt-1">Alasan: {p.alasanTolak}</p>
-                  )}
+                  {isPengelola && <p className="text-sm text-gray-500">{p.userNama}</p>}
+                  <p className="text-lg font-semibold">Rp {p.jumlah.toLocaleString('id-ID')}</p>
+                  <p className="text-xs text-gray-400">Tenor: {p.tenor} bulan | Angsuran: Rp {p.angsuranPerBulan.toLocaleString('id-ID')}/bulan</p>
+                  {p.status === 'ditolak' && p.alasanTolak && <p className="text-xs text-red-500 mt-1">Alasan: {p.alasanTolak}</p>}
                 </div>
                 {getStatusBadge(p.status)}
               </div>
-
               <div className="grid grid-cols-3 gap-2 mb-3 text-sm">
-                <div>
-                  <p className="text-gray-500">Total + Bunga</p>
-                  <p className="font-medium">Rp {p.total.toLocaleString('id-ID')}</p>
-                </div>
-                <div>
-                  <p className="text-gray-500">Sisa</p>
-                  <p className={`font-medium ${p.sisa > 0 && p.status !== 'ditolak' ? 'text-orange-600' : 'text-green-600'}`}>
-                    {p.status === 'ditolak' ? 'Ditolak' : `Rp ${p.sisa.toLocaleString('id-ID')}`}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-gray-500">Diajukan</p>
-                  <p className="text-sm">{p.diajukanPada.toLocaleDateString('id-ID')}</p>
-                </div>
+                <div><p className="text-gray-500">Total + Bunga</p><p className="font-medium">Rp {p.total.toLocaleString('id-ID')}</p></div>
+                <div><p className="text-gray-500">Sisa</p><p className={`font-medium ${p.sisa > 0 && p.status !== 'ditolak' ? 'text-orange-600' : 'text-green-600'}`}>{p.status === 'ditolak' ? 'Ditolak' : `Rp ${p.sisa.toLocaleString('id-ID')}`}</p></div>
+                <div><p className="text-gray-500">Diajukan</p><p className="text-sm">{p.diajukanPada.toLocaleDateString('id-ID')}</p></div>
               </div>
-
               <div className="flex gap-2 flex-wrap">
                 {isPengelola && p.status === 'pending' && (
                   <>
-                    <button
-                      onClick={() => {
-                        setSelectedPinjaman(p);
-                        setModalOpen('setujui');
-                      }}
-                      className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700"
-                    >
-                      Setujui
-                    </button>
-                    <button
-                      onClick={() => {
-                        setSelectedPinjaman(p);
-                        setModalOpen('tolak');
-                      }}
-                      className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700"
-                    >
-                      Tolak
-                    </button>
+                    <button onClick={() => { setSelectedPinjaman(p); setModalOpen('setujui'); }} className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700">Setujui</button>
+                    <button onClick={() => { setSelectedPinjaman(p); setModalOpen('tolak'); setAlasanTolak(''); }} className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700">Tolak</button>
                   </>
                 )}
-                {p.status === 'aktif' && (
-                  <button
-                    onClick={() => {
-                      setSelectedPinjaman(p);
-                      setModalOpen('bayar');
-                      setBayarAmount('');
-                    }}
-                    className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700"
-                  >
-                    Bayar Angsuran
+                {isPengelola && p.status === 'aktif' && (
+                  <button onClick={() => { setSelectedPinjaman(p); setModalOpen('bayar'); setBayarOption('1'); }} className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700">
+                    Catat Pembayaran
                   </button>
                 )}
-                {p.status === 'aktif' && !isPengelola && (
+                {!isPengelola && p.status === 'aktif' && (
                   <div className="text-sm text-gray-500 flex items-center gap-1">
                     <Clock size={14} />
-                    Sisa Rp {p.sisa.toLocaleString('id-ID')}
+                    Sisa Rp {p.sisa.toLocaleString('id-ID')} | Angsuran Rp {p.angsuranPerBulan.toLocaleString('id-ID')}/bulan
                   </div>
                 )}
               </div>
@@ -469,61 +381,19 @@ export default function PinjamanPage() {
         </div>
       )}
 
-      {/* Modal Ajukan Pinjaman */}
+      {/* Modal Ajukan Pinjaman (Anggota) */}
       {modalOpen === 'ajukan' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md p-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Ajukan Pinjaman</h2>
-            <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-              <p className="text-sm text-gray-600 dark:text-gray-300">Bunga flat 5% dari jumlah pinjaman</p>
-            </div>
+            <h2 className="text-xl font-semibold mb-4">Ajukan Pinjaman</h2>
+            <div className="mb-4 p-3 bg-blue-50 rounded-lg"><p className="text-sm">Bunga flat 5% dari jumlah pinjaman</p></div>
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Jumlah Pinjaman (Rp)
-                </label>
-                <input
-                  type="number"
-                  value={formData.jumlah}
-                  onChange={(e) => setFormData({ ...formData, jumlah: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700"
-                  placeholder="Misal: 1000000"
-                  autoFocus
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Tenor (Bulan)
-                </label>
-                <input
-                  type="number"
-                  value={formData.tenor}
-                  onChange={(e) => setFormData({ ...formData, tenor: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700"
-                  placeholder="1 - 36 bulan"
-                />
-              </div>
-              {formData.jumlah && formData.tenor && (
-                <div className="p-3 bg-gray-100 dark:bg-gray-700 rounded-lg">
-                  <p className="text-sm">Total yang harus dibayar: <strong>Rp {(parseInt(formData.jumlah) * 1.05).toLocaleString('id-ID')}</strong></p>
-                  <p className="text-xs text-gray-500">Angsuran per bulan: Rp {(parseInt(formData.jumlah) * 1.05 / parseInt(formData.tenor)).toLocaleString('id-ID')}</p>
-                </div>
-              )}
+              <input type="number" placeholder="Jumlah Pinjaman (Rp)" value={formData.jumlah} onChange={(e) => setFormData({ ...formData, jumlah: e.target.value })} className="w-full px-3 py-2 border rounded-lg" />
+              <input type="number" placeholder="Tenor (Bulan) 1-36" value={formData.tenor} onChange={(e) => setFormData({ ...formData, tenor: e.target.value })} className="w-full px-3 py-2 border rounded-lg" />
             </div>
             <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => setModalOpen(null)}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700"
-              >
-                Batal
-              </button>
-              <button
-                onClick={handleAjukan}
-                disabled={submitting}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-              >
-                {submitting ? 'Memproses...' : 'Ajukan'}
-              </button>
+              <button onClick={() => setModalOpen(null)} className="flex-1 px-4 py-2 border rounded-lg">Batal</button>
+              <button onClick={handleAjukan} disabled={submitting} className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg disabled:opacity-50">{submitting ? 'Memproses...' : 'Ajukan'}</button>
             </div>
           </div>
         </div>
@@ -533,28 +403,16 @@ export default function PinjamanPage() {
       {modalOpen === 'setujui' && selectedPinjaman && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md p-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Setujui Pinjaman</h2>
-            <div className="space-y-3 mb-6">
+            <h2 className="text-xl font-semibold mb-4">Setujui Pinjaman</h2>
+            <div className="space-y-2 mb-4">
               <p><strong>Peminjam:</strong> {selectedPinjaman.userNama}</p>
               <p><strong>Jumlah:</strong> Rp {selectedPinjaman.jumlah.toLocaleString('id-ID')}</p>
               <p><strong>Tenor:</strong> {selectedPinjaman.tenor} bulan</p>
-              <p><strong>Total + Bunga (5%):</strong> Rp {selectedPinjaman.total.toLocaleString('id-ID')}</p>
               <p><strong>Angsuran per bulan:</strong> Rp {selectedPinjaman.angsuranPerBulan.toLocaleString('id-ID')}</p>
             </div>
             <div className="flex gap-3">
-              <button
-                onClick={() => setModalOpen(null)}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700"
-              >
-                Batal
-              </button>
-              <button
-                onClick={handleSetujui}
-                disabled={submitting}
-                className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
-              >
-                {submitting ? 'Memproses...' : 'Setujui'}
-              </button>
+              <button onClick={() => setModalOpen(null)} className="flex-1 px-4 py-2 border rounded-lg">Batal</button>
+              <button onClick={handleSetujui} disabled={submitting} className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg">Setujui</button>
             </div>
           </div>
         </div>
@@ -564,77 +422,102 @@ export default function PinjamanPage() {
       {modalOpen === 'tolak' && selectedPinjaman && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md p-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Tolak Pinjaman</h2>
-            <div className="space-y-3 mb-4">
-              <p><strong>Peminjam:</strong> {selectedPinjaman.userNama}</p>
-              <p><strong>Jumlah:</strong> Rp {selectedPinjaman.jumlah.toLocaleString('id-ID')}</p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Alasan Penolakan (Opsional)
-              </label>
-              <textarea
-                value={alasanTolak}
-                onChange={(e) => setAlasanTolak(e.target.value)}
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700"
-                placeholder="Misal: Data tidak lengkap, tidak memenuhi syarat..."
-              />
-            </div>
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => setModalOpen(null)}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700"
-              >
-                Batal
-              </button>
-              <button
-                onClick={handleTolak}
-                disabled={submitting}
-                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
-              >
-                {submitting ? 'Memproses...' : 'Tolak'}
-              </button>
+            <h2 className="text-xl font-semibold mb-4">Tolak Pinjaman</h2>
+            <textarea placeholder="Alasan penolakan (opsional)" value={alasanTolak} onChange={(e) => setAlasanTolak(e.target.value)} rows={3} className="w-full px-3 py-2 border rounded-lg mb-4" />
+            <div className="flex gap-3">
+              <button onClick={() => setModalOpen(null)} className="flex-1 px-4 py-2 border rounded-lg">Batal</button>
+              <button onClick={handleTolak} disabled={submitting} className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg">Tolak</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Modal Bayar Angsuran */}
+      {/* Modal Catat Pembayaran (Pengelola) */}
       {modalOpen === 'bayar' && selectedPinjaman && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md p-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Bayar Angsuran</h2>
+            <h2 className="text-xl font-semibold mb-4">Catat Pembayaran Angsuran</h2>
             <div className="space-y-3 mb-4">
+              <p><strong>Peminjam:</strong> {selectedPinjaman.userNama}</p>
               <p><strong>Sisa pinjaman:</strong> Rp {selectedPinjaman.sisa.toLocaleString('id-ID')}</p>
-              <p><strong>Angsuran per bulan (rekomendasi):</strong> Rp {selectedPinjaman.angsuranPerBulan.toLocaleString('id-ID')}</p>
+              <p><strong>Angsuran per bulan:</strong> Rp {selectedPinjaman.angsuranPerBulan.toLocaleString('id-ID')}</p>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Jumlah Bayar (Rp)
-              </label>
-              <input
-                type="number"
-                value={bayarAmount}
-                onChange={(e) => setBayarAmount(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700"
-                placeholder="Masukkan jumlah"
-                autoFocus
-              />
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-2">Pilih opsi pembayaran:</label>
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setBayarOption('1')}
+                  className={`py-2 px-3 rounded-lg border ${
+                    bayarOption === '1' 
+                      ? 'bg-blue-600 text-white border-blue-600' 
+                      : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
+                  }`}
+                >
+                  1 Bulan<br/>
+                  <span className="text-xs">Rp {selectedPinjaman.angsuranPerBulan.toLocaleString('id-ID')}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBayarOption('2')}
+                  className={`py-2 px-3 rounded-lg border ${
+                    bayarOption === '2' 
+                      ? 'bg-blue-600 text-white border-blue-600' 
+                      : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
+                  }`}
+                >
+                  2 Bulan<br/>
+                  <span className="text-xs">Rp {(selectedPinjaman.angsuranPerBulan * 2).toLocaleString('id-ID')}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBayarOption('3')}
+                  className={`py-2 px-3 rounded-lg border ${
+                    bayarOption === '3' 
+                      ? 'bg-blue-600 text-white border-blue-600' 
+                      : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
+                  }`}
+                >
+                  3 Bulan<br/>
+                  <span className="text-xs">Rp {(selectedPinjaman.angsuranPerBulan * 3).toLocaleString('id-ID')}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBayarOption('4')}
+                  className={`py-2 px-3 rounded-lg border ${
+                    bayarOption === '4' 
+                      ? 'bg-blue-600 text-white border-blue-600' 
+                      : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
+                  }`}
+                >
+                  Langsung Lunas<br/>
+                  <span className="text-xs">Rp {selectedPinjaman.sisa.toLocaleString('id-ID')}</span>
+                </button>
+              </div>
             </div>
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => setModalOpen(null)}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700"
-              >
-                Batal
-              </button>
-              <button
-                onClick={handleBayar}
-                disabled={submitting}
+
+            {!isPaymentValid() && selectedPinjaman && bayarOption !== 'lunas' && (() => {
+              const bulan = parseInt(bayarOption);
+              const totalBayar = selectedPinjaman.angsuranPerBulan * bulan;
+              if (selectedPinjaman.sisa < totalBayar) {
+                return (
+                  <div className="p-2 bg-red-50 text-red-600 text-sm rounded-lg mb-4">
+                    ⚠️ Sisa pinjaman tidak mencukupi untuk pembayaran {bulan} bulan
+                  </div>
+                );
+              }
+              return null;
+            })()}
+
+            <div className="flex gap-3 mt-4">
+              <button onClick={() => setModalOpen(null)} className="flex-1 px-4 py-2 border rounded-lg">Batal</button>
+              <button 
+                onClick={handleBayar} 
+                disabled={submitting || !isPaymentValid()} 
                 className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
               >
-                {submitting ? 'Memproses...' : 'Bayar'}
+                {submitting ? 'Memproses...' : 'Catat Pembayaran'}
               </button>
             </div>
           </div>

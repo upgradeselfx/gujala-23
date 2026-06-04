@@ -321,7 +321,7 @@ export default function LaporanPage() {
         nama: item.userNama,
         jumlah: item.jumlah,
         sisa: item.sisa,
-        status: item.status === 'aktif' ? 'Aktif' : item.status === 'lunas' ? 'Lunas' : 'Menunggu',
+        status: item.status === 'aktif' ? 'Aktif' : item.status === 'lunas' ? 'Lunas' : item.status === 'ditolak' ? 'Ditolak' : 'Menunggu',
         angsuran: item.angsuranPerBulan,
       }));
     } else if (activeTab === 'cash') {
@@ -372,10 +372,11 @@ export default function LaporanPage() {
   };
 
   const ringkasanPinjaman = {
-    totalPinjaman: laporanPinjaman.reduce((sum, i) => sum + i.jumlah, 0),
-    totalSisa: laporanPinjaman.reduce((sum, i) => sum + i.sisa, 0),
+    totalPinjaman: laporanPinjaman.filter(p => p.status === 'aktif' || p.status === 'lunas').reduce((sum, i) => sum + i.jumlah, 0),
+    totalSisa: laporanPinjaman.filter(p => p.status === 'aktif').reduce((sum, i) => sum + i.sisa, 0),
     aktif: laporanPinjaman.filter(i => i.status === 'aktif').length,
     lunas: laporanPinjaman.filter(i => i.status === 'lunas').length,
+    ditolak: laporanPinjaman.filter(i => i.status === 'ditolak').length,
   };
 
   const ringkasanCash = {
@@ -385,6 +386,19 @@ export default function LaporanPage() {
   };
 
   if (!user) return null;
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'aktif':
+        return <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">Aktif</span>;
+      case 'lunas':
+        return <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">Lunas</span>;
+      case 'ditolak':
+        return <span className="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">Ditolak</span>;
+      default:
+        return <span className="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">Menunggu</span>;
+    }
+  };
 
   return (
     <div className="p-6">
@@ -396,8 +410,8 @@ export default function LaporanPage() {
           <p className="text-gray-500 dark:text-gray-400 mt-1">Lihat rekap data simpanan, pinjaman, cash bulanan, dan arisan</p>
         </div>
         <div className="flex gap-2">
-          <button onClick={handlePrint} className="px-3 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 flex items-center gap-2">
-            <Printer size={16} /> Cetak
+          <button onClick={handlePrint} className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2">
+            <Printer size={16} /> Cetak / PDF
           </button>
           <button onClick={handleExportCSV} className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2">
             <Download size={16} /> Export CSV
@@ -449,6 +463,7 @@ export default function LaporanPage() {
       )}
 
       <div id="laporan-content">
+        {/* LAPORAN SIMPANAN */}
         {activeTab === 'simpanan' && (
           <div>
             {isPengelola && selectedAnggota === 'all' && (
@@ -502,25 +517,28 @@ export default function LaporanPage() {
           </div>
         )}
 
+        {/* LAPORAN PINJAMAN */}
         {activeTab === 'pinjaman' && (
           <div>
             {isPengelola && selectedAnggota === 'all' && (
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                 <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
-                  <p className="text-sm text-gray-500">Total Pinjaman</p>
+                  <p className="text-sm text-gray-500">Total Pinjaman Disetujui</p>
                   <p className="text-2xl font-bold text-purple-600">Rp {ringkasanPinjaman.totalPinjaman.toLocaleString('id-ID')}</p>
+                  <p className="text-xs text-gray-400">(aktif + lunas)</p>
                 </div>
                 <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
-                  <p className="text-sm text-gray-500">Total Sisa</p>
+                  <p className="text-sm text-gray-500">Total Sisa Tagihan</p>
                   <p className="text-2xl font-bold text-orange-600">Rp {ringkasanPinjaman.totalSisa.toLocaleString('id-ID')}</p>
+                  <p className="text-xs text-gray-400">(hanya pinjaman aktif)</p>
                 </div>
                 <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
                   <p className="text-sm text-gray-500">Pinjaman Aktif</p>
                   <p className="text-2xl font-bold text-blue-600">{ringkasanPinjaman.aktif}</p>
                 </div>
                 <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
-                  <p className="text-sm text-gray-500">Pinjaman Lunas</p>
-                  <p className="text-2xl font-bold text-green-600">{ringkasanPinjaman.lunas}</p>
+                  <p className="text-sm text-gray-500">Pinjaman Ditolak</p>
+                  <p className="text-2xl font-bold text-red-600">{ringkasanPinjaman.ditolak}</p>
                 </div>
               </div>
             )}
@@ -548,16 +566,10 @@ export default function LaporanPage() {
                           <td className="px-6 py-4 text-sm text-gray-500">{idx + 1}</td>
                           <td className="px-6 py-4 text-sm font-medium text-gray-900">{item.userNama}</td>
                           <td className="px-6 py-4 text-sm text-right">Rp {item.jumlah.toLocaleString('id-ID')}</td>
-                          <td className="px-6 py-4 text-sm text-right text-orange-600">Rp {item.sisa.toLocaleString('id-ID')}</td>
-                          <td className="px-6 py-4 text-center">
-                            <span className={`px-2 py-1 text-xs rounded-full ${
-                              item.status === 'aktif' ? 'bg-blue-100 text-blue-800' :
-                              item.status === 'lunas' ? 'bg-green-100 text-green-800' :
-                              'bg-yellow-100 text-yellow-800'
-                            }`}>
-                              {item.status === 'aktif' ? 'Aktif' : item.status === 'lunas' ? 'Lunas' : 'Menunggu'}
-                            </span>
+                          <td className="px-6 py-4 text-sm text-right text-orange-600">
+                            {item.status === 'ditolak' ? 'Rp 0' : `Rp ${item.sisa.toLocaleString('id-ID')}`}
                           </td>
+                          <td className="px-6 py-4 text-center">{getStatusBadge(item.status)}</td>
                           <td className="px-6 py-4 text-sm text-right">Rp {item.angsuranPerBulan.toLocaleString('id-ID')}</td>
                         </tr>
                       ))
@@ -569,6 +581,7 @@ export default function LaporanPage() {
           </div>
         )}
 
+        {/* LAPORAN CASH BULANAN */}
         {activeTab === 'cash' && (
           <div>
             {isPengelola && selectedAnggota === 'all' && (
@@ -626,6 +639,7 @@ export default function LaporanPage() {
           </div>
         )}
 
+        {/* LAPORAN ARISAN */}
         {activeTab === 'arisan' && (
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
             <div className="flex items-center gap-2 mb-4">
