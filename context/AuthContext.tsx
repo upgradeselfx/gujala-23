@@ -12,6 +12,7 @@ import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/app/firebase/client';
 import { setCookie, deleteCookie } from 'cookies-next';
 import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
 
 type UserData = {
   uid: string;
@@ -38,6 +39,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
+  // Session Timeout: Auto logout setelah 1 jam tidak aktif
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+    
+    if (user) {
+      // Auto logout setelah 1 jam (3600000 ms)
+      timeoutId = setTimeout(() => {
+        signOut(auth);
+        toast.success('Sesi Anda telah berakhir. Silakan login kembali.');
+        router.push('/login');
+      }, 3600000);
+    }
+    
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [user, router]);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
@@ -63,32 +82,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const register = async (email: string, password: string, nama: string, noTel: string, adminCode: string) => {
-  // Cek apakah kode admin cocok (ambil dari environment variable)
-  const ADMIN_CODE = process.env.NEXT_PUBLIC_ADMIN_SECRET_CODE || 'ADMIN2025';
-  const isAdmin = adminCode === ADMIN_CODE;
-  const role = isAdmin ? 'pengelola' : 'anggota';
-  
-  console.log('Admin code entered:', adminCode);
-  console.log('Expected code:', ADMIN_CODE);
-  console.log('Is admin?', isAdmin);
-  console.log('Role assigned:', role);
+    // Cek apakah kode admin cocok (ambil dari environment variable)
+    const ADMIN_CODE = process.env.NEXT_PUBLIC_ADMIN_SECRET_CODE || 'KeBaB23';
+    const isAdmin = adminCode === ADMIN_CODE;
+    const role = isAdmin ? 'pengelola' : 'anggota';
+    
+    console.log('Admin code entered:', adminCode);
+    console.log('Expected code:', ADMIN_CODE);
+    console.log('Is admin?', isAdmin);
+    console.log('Role assigned:', role);
 
-  // Buat akun di Firebase Auth
-  const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-  const uid = userCredential.user.uid;
-  
-  // Simpan data ke Firestore
-  await setDoc(doc(db, 'users', uid), {
-    uid,
-    email,
-    nama,
-    noTel,
-    role,
-    createdAt: new Date().toISOString()
-  });
-  
-  router.push('/dashboard');
-};
+    // Buat akun di Firebase Auth
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const uid = userCredential.user.uid;
+    
+    // Simpan data ke Firestore
+    await setDoc(doc(db, 'users', uid), {
+      uid,
+      email,
+      nama,
+      noTel,
+      role,
+      createdAt: new Date().toISOString()
+    });
+    
+    router.push('/dashboard');
+  };
 
   const login = async (email: string, password: string) => {
     await signInWithEmailAndPassword(auth, email, password);

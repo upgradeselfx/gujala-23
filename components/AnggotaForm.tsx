@@ -20,6 +20,11 @@ interface AnggotaFormProps {
   title: string;
 }
 
+// Fungsi sanitasi input
+const sanitizeInput = (input: string) => {
+  return input.replace(/[<>]/g, '').replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+};
+
 export default function AnggotaForm({ isOpen, onClose, onSubmit, initialData, title }: AnggotaFormProps) {
   const [formData, setFormData] = useState<AnggotaFormData>({
     nama: '',
@@ -44,7 +49,16 @@ export default function AnggotaForm({ isOpen, onClose, onSubmit, initialData, ti
     e.preventDefault();
     setLoading(true);
     try {
-      await onSubmit(formData);
+      // Sanitasi data sebelum submit
+      const cleanData = {
+        ...formData,
+        nama: sanitizeInput(formData.nama),
+        email: sanitizeInput(formData.email),
+        noTel: sanitizeInput(formData.noTel),
+        alamat: sanitizeInput(formData.alamat),
+        password: formData.password,
+      };
+      await onSubmit(cleanData);
       onClose();
     } catch (error) {
       console.error(error);

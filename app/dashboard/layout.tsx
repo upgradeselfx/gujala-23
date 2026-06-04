@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import Sidebar from '@/components/Sidebar';
 import Notification from '@/components/Notification';
 import { Menu, Sparkles } from 'lucide-react';
+import AIChatbot from '@/components/AIChatbot';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -64,10 +65,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <Menu size={22} className="text-gray-700 dark:text-gray-300" />
               </button>
               <div className="hidden sm:block">
-                <h2 className="text-xl font-bold text-gray-800 dark:text-white">GUJALA 23</h2>
+                <h2 className="text-xl font-bold text-gray-800 dark:text-white">Only For Family</h2>
                 <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
                   <Sparkles size={12} className="text-purple-500" />
-                  Sistem Manajemen Koperasi & Arisan
+                  Sistem Manajemen Koperasi & Arisan - v0.1
                 </p>
               </div>
             </div>
@@ -92,6 +93,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <main className="flex-1 overflow-auto p-4 md:p-6">
           {children}
         </main>
+        <AIChatbot />
       </div>
     </div>
   );

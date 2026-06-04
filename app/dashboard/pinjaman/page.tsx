@@ -382,22 +382,66 @@ export default function PinjamanPage() {
       )}
 
       {/* Modal Ajukan Pinjaman (Anggota) */}
-      {modalOpen === 'ajukan' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md p-6">
-            <h2 className="text-xl font-semibold mb-4">Ajukan Pinjaman</h2>
-            <div className="mb-4 p-3 bg-blue-50 rounded-lg"><p className="text-sm">Bunga flat 5% dari jumlah pinjaman</p></div>
-            <div className="space-y-4">
-              <input type="number" placeholder="Jumlah Pinjaman (Rp)" value={formData.jumlah} onChange={(e) => setFormData({ ...formData, jumlah: e.target.value })} className="w-full px-3 py-2 border rounded-lg" />
-              <input type="number" placeholder="Tenor (Bulan) 1-36" value={formData.tenor} onChange={(e) => setFormData({ ...formData, tenor: e.target.value })} className="w-full px-3 py-2 border rounded-lg" />
-            </div>
-            <div className="flex gap-3 mt-6">
-              <button onClick={() => setModalOpen(null)} className="flex-1 px-4 py-2 border rounded-lg">Batal</button>
-              <button onClick={handleAjukan} disabled={submitting} className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg disabled:opacity-50">{submitting ? 'Memproses...' : 'Ajukan'}</button>
-            </div>
-          </div>
+{modalOpen === 'ajukan' && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-md p-6">
+      <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Ajukan Pinjaman</h2>
+      
+      <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/50 rounded-lg">
+        <p className="text-sm text-blue-800 dark:text-blue-100 font-medium">
+          Bunga flat 5% dari jumlah pinjaman
+        </p>
+      </div>
+      
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Jumlah Pinjaman (Rp)</label>
+          <input
+            type="number"
+            placeholder="Jumlah Pinjaman"
+            value={formData.jumlah}
+            onChange={(e) => setFormData({ ...formData, jumlah: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
         </div>
-      )}
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tenor (Bulan)</label>
+          <input
+            type="number"
+            placeholder="Tenor (1-36 bulan)"
+            value={formData.tenor}
+            onChange={(e) => setFormData({ ...formData, tenor: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        
+        {formData.jumlah && formData.tenor && (
+          <div className="p-3 bg-gray-100 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+            <p className="text-sm text-gray-600 dark:text-gray-300">Total yang harus dibayar: <strong className="text-gray-900 dark:text-white">Rp {(parseInt(formData.jumlah) * 1.05).toLocaleString('id-ID')}</strong></p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Angsuran per bulan: <strong className="text-gray-900 dark:text-white">Rp {(parseInt(formData.jumlah) * 1.05 / parseInt(formData.tenor)).toLocaleString('id-ID')}</strong></p>
+          </div>
+        )}
+      </div>
+      
+      <div className="flex gap-3 mt-6">
+        <button
+          onClick={() => setModalOpen(null)}
+          className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+        >
+          Batal
+        </button>
+        <button
+          onClick={handleAjukan}
+          disabled={submitting}
+          className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+        >
+          {submitting ? 'Memproses...' : 'Ajukan'}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
       {/* Modal Setujui Pinjaman (Pengelola) */}
       {modalOpen === 'setujui' && selectedPinjaman && (
