@@ -39,19 +39,20 @@ export default function LaporanTahunanPage() {
   };
 
   const handleExportPDF = () => {
-    const element = document.getElementById('laporan-tahunan-content');
-    if (!element) return;
-    
-    const opt = {
-      margin: [10, 10, 10, 10],
-      filename: `laporan_tahunan_${tahun}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2 },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
-    };
-    html2pdf().set(opt).from(element).save();
-    toast.success('PDF sedang diproses...');
+  const element = document.getElementById('laporan-tahunan-content');
+  if (!element) return;
+
+  const opt = {
+    margin: [10, 10, 10, 10] as const,
+    filename: `laporan_tahunan_${tahun}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2, logging: false },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
   };
+
+  html2pdf().set(opt).from(element).save();
+  toast.success('PDF sedang diproses...');
+};
 
   if (!isPengelola) {
     return (
