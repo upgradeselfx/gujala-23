@@ -4,8 +4,6 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { Calendar } from 'lucide-react';
-import { History } from 'lucide-react';
 import { 
   LayoutDashboard, 
   Users, 
@@ -19,7 +17,9 @@ import {
   Moon,
   Sun,
   UserCircle,
-  Sparkles
+  Sparkles,
+  History,
+  Calendar
 } from 'lucide-react';
 
 type MenuItem = {
@@ -47,7 +47,6 @@ export default function Sidebar() {
   const pathname = usePathname();
   const { userData, logout } = useAuth();
   const role = userData?.role || 'anggota';
-
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
@@ -77,15 +76,12 @@ export default function Sidebar() {
 
   return (
     <aside className="w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col h-screen sticky top-0 shadow-xl transition-all duration-300">
-      {/* Logo */}
       <div className="p-4 border-b border-gray-200 dark:border-gray-800">
         <div className="flex items-center gap-2 mb-1">
           <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-lg">
             <Sparkles size={16} className="text-white" />
           </div>
-          <h1 className="text-xl font-bold text-gray-800 dark:text-white">
-            GUJALA 23
-          </h1>
+          <h1 className="text-xl font-bold text-gray-800 dark:text-white">GUJALA 23</h1>
         </div>
         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-1">
           <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
@@ -93,53 +89,30 @@ export default function Sidebar() {
         </p>
       </div>
 
-      {/* Menu */}
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
         {filteredMenu.map((item) => {
           const isActive = pathname === item.href;
           return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-300 ${
-                isActive
-                  ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-600 dark:text-blue-400 border-l-2 border-blue-500 shadow-md'
-                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:scale-[1.02] hover:shadow-md'
-              }`}
-            >
-              <div className={`transition-transform duration-300 ${isActive ? 'scale-110' : ''}`}>
-                {item.icon}
-              </div>
+            <Link key={item.href} href={item.href} className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-300 ${isActive ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-600 dark:text-blue-400 border-l-2 border-blue-500 shadow-md' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:scale-[1.02] hover:shadow-md'}`}>
+              <div className={`transition-transform duration-300 ${isActive ? 'scale-110' : ''}`}>{item.icon}</div>
               <span className="text-sm font-medium flex-1">{item.name}</span>
-              {isActive && (
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-              )}
+              {isActive && <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />}
             </Link>
           );
         })}
       </nav>
 
-      {/* Dark Mode Toggle */}
       <div className="px-4 pb-2">
-        <button
-          onClick={toggleDarkMode}
-          className="flex items-center gap-3 px-3 py-2 w-full rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-300 hover:scale-[1.02] group"
-        >
+        <button onClick={toggleDarkMode} className="flex items-center gap-3 px-3 py-2 w-full rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-300 hover:scale-[1.02] group">
           <div className={`transition-transform duration-300 group-hover:scale-110 ${isDark ? 'rotate-12' : ''}`}>
             {isDark ? <Sun size={20} className="text-yellow-500" /> : <Moon size={20} className="text-blue-500" />}
           </div>
-          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            {isDark ? 'Mode Terang' : 'Mode Gelap'}
-          </span>
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{isDark ? 'Mode Terang' : 'Mode Gelap'}</span>
         </button>
       </div>
 
-      {/* Logout Button */}
       <div className="p-4 border-t border-gray-200 dark:border-gray-800">
-        <button
-          onClick={() => logout()}
-          className="flex items-center gap-3 px-3 py-2 w-full rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 transition-all duration-300 hover:scale-[1.02] group"
-        >
+        <button onClick={() => logout()} className="flex items-center gap-3 px-3 py-2 w-full rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 transition-all duration-300 hover:scale-[1.02] group">
           <LogOut size={20} className="transition-transform duration-300 group-hover:translate-x-1" />
           <span className="text-sm font-medium">Logout</span>
         </button>
