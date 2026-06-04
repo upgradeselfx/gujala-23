@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { Calendar } from 'lucide-react';
-import { Bell } from 'lucide-react';
 import { History } from 'lucide-react';
 import { 
   LayoutDashboard, 
@@ -40,7 +39,6 @@ const menuItems: MenuItem[] = [
   { name: 'Pengumuman', href: '/dashboard/pengumuman', icon: <Megaphone size={20} />, roles: ['anggota', 'pengelola'] },
   { name: 'Laporan', href: '/dashboard/laporan', icon: <FileText size={20} />, roles: ['anggota', 'pengelola'] },
   { name: 'Log Aktivitas', href: '/dashboard/log-aktivitas', icon: <History size={20} />, roles: ['anggota', 'pengelola'] },
-  { name: 'Reminder', href: '/dashboard/reminder', icon: <Bell size={20} />, roles: ['pengelola'] },
   { name: 'Laporan Tahunan', href: '/dashboard/laporan-tahunan', icon: <Calendar size={20} />, roles: ['pengelola'] },
   { name: 'Profil', href: '/dashboard/profil', icon: <UserCircle size={20} />, roles: ['anggota', 'pengelola'] },
 ];
