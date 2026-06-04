@@ -1,12 +1,14 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { confirmPasswordReset } from 'firebase/auth';
 import { auth } from '@/app/firebase/client';
 import toast, { Toaster } from 'react-hot-toast';
 
-export default function ResetPasswordPage() {
+// Komponen yang menggunakan useSearchParams() harus dipisah
+function ResetPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [oobCode, setOobCode] = useState<string | null>(null);
@@ -57,7 +59,6 @@ export default function ResetPasswordPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4">
-      <Toaster position="top-right" />
       <div className="max-w-md w-full space-y-8 bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Reset Password</h2>
@@ -65,7 +66,6 @@ export default function ResetPasswordPage() {
             Masukkan password baru untuk akun Anda
           </p>
         </div>
-
         <form onSubmit={handleReset} className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -103,5 +103,14 @@ export default function ResetPasswordPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+// Halaman utama membungkus komponen dengan Suspense
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Memuat...</div>}>
+      <ResetPasswordForm />
+    </Suspense>
   );
 }
