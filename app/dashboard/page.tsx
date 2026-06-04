@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { db } from '@/app/firebase/client';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
-import { Users, Wallet, HandCoins } from 'lucide-react';
+import { LayoutDashboard, Users, Wallet, HandCoins } from 'lucide-react';
 
 export default function DashboardPage() {
   const { user, userData } = useAuth();
