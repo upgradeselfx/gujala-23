@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -18,7 +18,9 @@ import {
   AlertCircle,
   Zap,
   Swords,
-  Flame
+  Flame,
+  Volume2,
+  VolumeX
 } from 'lucide-react';
 
 const sanitizeInput = (input: string) => {
@@ -38,26 +40,63 @@ export default function LoginPage() {
   const [robotRotate, setRobotRotate] = useState(0);
   const [stars, setStars] = useState<Array<{id: number; left: number; top: number; size: number; duration: number; delay: number}>>([]);
   const [shootingStars, setShootingStars] = useState<Array<{id: number; top: number; left: number; duration: number; delay: number}>>([]);
+  const [isMuted, setIsMuted] = useState(true);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const { login } = useAuth();
   const router = useRouter();
 
   // FORCE DARK MODE - langsung ke HTML element
   useEffect(() => {
-    // Tambahkan class dark ke html element
     const htmlElement = document.documentElement;
     if (!htmlElement.classList.contains('dark')) {
       htmlElement.classList.add('dark');
     }
-    
-    // Backup: set inline style background untuk memastikan gelap
     document.body.style.backgroundColor = '#0a0a0a';
     document.body.style.margin = '0';
     document.body.style.padding = '0';
-    
+  }, []);
+
+  // Inisialisasi musik dari folder public
+  useEffect(() => {
+    const audio = new Audio('/music/mbg.mp3');
+    audio.loop = true;
+    audio.volume = 0.4;
+    audio.preload = 'auto';
+    audioRef.current = audio;
+
+    const handleFirstInteraction = () => {
+      if (audioRef.current && !isMuted) {
+        audioRef.current.play().catch(e => console.log('Audio play failed:', e));
+      }
+      document.removeEventListener('click', handleFirstInteraction);
+      document.removeEventListener('keydown', handleFirstInteraction);
+    };
+
+    document.addEventListener('click', handleFirstInteraction);
+    document.addEventListener('keydown', handleFirstInteraction);
+
     return () => {
-      // Jangan hapus dark mode saat unmount
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+      document.removeEventListener('click', handleFirstInteraction);
+      document.removeEventListener('keydown', handleFirstInteraction);
     };
   }, []);
+
+  // Handle mute/unmute
+  const toggleMute = () => {
+    if (audioRef.current) {
+      if (isMuted) {
+        audioRef.current.play().catch(e => console.log('Audio play failed:', e));
+        setIsMuted(false);
+      } else {
+        audioRef.current.pause();
+        setIsMuted(true);
+      }
+    }
+  };
 
   // Animasi robot bergerak
   useEffect(() => {
@@ -205,9 +244,44 @@ export default function LoginPage() {
     }}>
       <Toaster position="top-right" />
       
+      {/* Tombol Musik */}
+      <button
+        onClick={toggleMute}
+        style={{
+          position: 'fixed',
+          bottom: '24px',
+          left: '24px',
+          zIndex: 100,
+          width: '48px',
+          height: '48px',
+          borderRadius: '50%',
+          background: 'rgba(0,0,0,0.6)',
+          border: '1px solid rgba(200,0,0,0.4)',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          transition: 'all 0.3s',
+          backdropFilter: 'blur(8px)'
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = 'rgba(220,38,38,0.3)';
+          e.currentTarget.style.borderColor = '#ef4444';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = 'rgba(0,0,0,0.6)';
+          e.currentTarget.style.borderColor = 'rgba(200,0,0,0.4)';
+        }}
+      >
+        {isMuted ? (
+          <VolumeX style={{ width: '24px', height: '24px', color: '#f87171' }} />
+        ) : (
+          <Volume2 style={{ width: '24px', height: '24px', color: '#f87171' }} />
+        )}
+      </button>
+      
       {/* Background Galaksi & Bintang Jatuh */}
       <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
-        {/* Bintang-bintang */}
         {stars.map((star) => (
           <div
             key={star.id}
@@ -226,12 +300,10 @@ export default function LoginPage() {
           />
         ))}
         
-        {/* Nebula Merah */}
         <div style={{ position: 'absolute', top: '25%', left: '25%', width: '384px', height: '384px', background: 'rgba(220,38,38,0.15)', borderRadius: '50%', filter: 'blur(64px)', animation: 'pulse 4s ease-in-out infinite' }} />
         <div style={{ position: 'absolute', bottom: '25%', right: '25%', width: '384px', height: '384px', background: 'rgba(200,0,0,0.1)', borderRadius: '50%', filter: 'blur(64px)', animation: 'pulse 4s ease-in-out infinite 1s' }} />
         <div style={{ position: 'absolute', top: '50%', left: '50%', width: '500px', height: '500px', background: 'rgba(250,100,0,0.08)', borderRadius: '50%', filter: 'blur(64px)', animation: 'pulse 4s ease-in-out infinite 2s' }} />
         
-        {/* Bintang Jatuh */}
         {shootingStars.map((star) => (
           <div
             key={star.id}
@@ -248,14 +320,12 @@ export default function LoginPage() {
           </div>
         ))}
         
-        {/* Bima Sakti effect */}
         <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0.2 }}>
           <div style={{ position: 'absolute', top: '33%', left: '50%', width: '600px', height: '300px', background: 'linear-gradient(90deg, rgba(220,38,38,0.2), transparent, rgba(220,38,38,0.2))', transform: 'rotate(45deg)', filter: 'blur(64px)' }} />
           <div style={{ position: 'absolute', bottom: '33%', right: '50%', width: '600px', height: '300px', background: 'linear-gradient(270deg, rgba(220,38,38,0.2), transparent, rgba(220,38,38,0.2))', transform: 'rotate(-45deg)', filter: 'blur(64px)' }} />
         </div>
       </div>
       
-      {/* Animated cursor glow effect */}
       <div
         style={{
           position: 'fixed',
@@ -272,7 +342,6 @@ export default function LoginPage() {
         }}
       />
 
-      {/* Main Login Card */}
       <div style={{ position: 'relative', zIndex: 10, maxWidth: '448px', width: '100%', margin: '0 16px', animation: 'slideUp 0.6s ease-out' }}>
         <div style={{ 
           position: 'relative',
@@ -284,7 +353,6 @@ export default function LoginPage() {
           border: '1px solid rgba(200,0,0,0.3)'
         }}>
           
-          {/* Animated border gradient */}
           <div style={{ 
             position: 'absolute', 
             inset: 0, 
@@ -295,11 +363,9 @@ export default function LoginPage() {
           }} />
           
           <div style={{ position: 'relative', padding: '24px 32px' }}>
-            {/* Logo Robot Bergerak */}
             <div style={{ textAlign: 'center', marginBottom: '32px' }}>
               <div style={{ position: 'relative', display: 'inline-block' }}>
                 <div style={{ position: 'relative', width: '96px', height: '96px', margin: '0 auto 16px' }}>
-                  {/* Robot Head */}
                   <div style={{ position: 'absolute', inset: 0, animation: 'float-garang 2s ease-in-out infinite' }}>
                     <div style={{ 
                       width: '100%', 
@@ -312,14 +378,11 @@ export default function LoginPage() {
                       boxShadow: '0 10px 25px -5px rgba(220,38,38,0.5)',
                       border: '2px solid #ef4444'
                     }}>
-                      {/* Robot Face */}
                       <div>
-                        {/* Robot Eyes */}
                         <div style={{ display: 'flex', gap: '12px', marginBottom: '8px' }}>
                           <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#000000', animation: 'pulse-garang 1.5s ease-in-out infinite', boxShadow: '0 0 8px #ef4444' }} />
                           <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#000000', animation: 'pulse-garang 1.5s ease-in-out infinite 0.3s', boxShadow: '0 0 8px #ef4444' }} />
                         </div>
-                        {/* Robot Mouth */}
                         <div style={{ display: 'flex', gap: '2px', justifyContent: 'center' }}>
                           <div style={{ width: '6px', height: '8px', background: '#dc2626', borderRadius: '2px' }} />
                           <div style={{ width: '6px', height: '8px', background: '#dc2626', borderRadius: '2px' }} />
@@ -327,14 +390,11 @@ export default function LoginPage() {
                         </div>
                       </div>
                     </div>
-                    {/* Robot Antenna */}
                     <div style={{ position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)', width: '4px', height: '16px', background: '#b91c1c' }} />
                     <div style={{ position: 'absolute', top: '-20px', left: '50%', transform: 'translateX(-50%)', width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444', animation: 'pulse-garang 1.5s ease-in-out infinite' }} />
-                    {/* Robot Ears */}
                     <div style={{ position: 'absolute', left: '-8px', top: '50%', transform: 'translateY(-50%)', width: '8px', height: '24px', background: '#991b1b', borderRadius: '8px 0 0 8px' }} />
                     <div style={{ position: 'absolute', right: '-8px', top: '50%', transform: 'translateY(-50%)', width: '8px', height: '24px', background: '#991b1b', borderRadius: '0 8px 8px 0' }} />
                   </div>
-                  {/* Rotating ring */}
                   <div 
                     style={{
                       position: 'absolute',
@@ -357,7 +417,6 @@ export default function LoginPage() {
                   />
                 </div>
                 
-                {/* Efek api */}
                 <div style={{ position: 'absolute', top: '-8px', right: '-8px' }}>
                   <Flame style={{ width: '20px', height: '20px', color: '#f97316', animation: 'flicker 0.8s ease-in-out infinite' }} />
                 </div>
@@ -381,7 +440,6 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Error Message */}
             {error && (
               <div style={{ 
                 marginBottom: '24px', 
@@ -400,10 +458,8 @@ export default function LoginPage() {
               </div>
             )}
 
-            {/* Login Form */}
             <form onSubmit={handleSubmit}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                {/* Email Field */}
                 <div>
                   <label style={{ 
                     fontSize: '14px', 
@@ -444,7 +500,6 @@ export default function LoginPage() {
                   </div>
                 </div>
 
-                {/* Password Field */}
                 <div>
                   <label style={{ 
                     fontSize: '14px', 
@@ -506,7 +561,6 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              {/* Attempts Warning */}
               {!blockedUntil && loginAttempts > 0 && loginAttempts < 5 && (
                 <div style={{ 
                   display: 'flex', 
@@ -545,7 +599,6 @@ export default function LoginPage() {
                 </div>
               )}
 
-              {/* Submit Button */}
               <button
                 type="submit"
                 disabled={loading || (blockedUntil ? Date.now() < blockedUntil : false)}
@@ -586,7 +639,6 @@ export default function LoginPage() {
                 </span>
               </button>
 
-              {/* Links */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '20px', textAlign: 'center' }}>
                 <Link 
                   href="/register" 
@@ -607,7 +659,6 @@ export default function LoginPage() {
           </div>
         </div>
         
-        {/* Credit */}
         <div style={{ textAlign: 'center', marginTop: '24px', fontSize: '12px', color: 'rgba(220,38,38,0.4)' }}>
           <p>© 2026 GUJALA 23</p>
         </div>
