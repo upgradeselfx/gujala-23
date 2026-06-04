@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { getReminderSettings, saveReminderSettings, ReminderSettings } from '@/lib/reminderService';
+import { getReminderSettings, saveReminderSettings } from '@/lib/reminderService';
+import type { ReminderSettings } from '@/lib/reminderService';
 import { Bell, Mail, Phone, Save } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 
-export default function ReminderSettings() {
+export default function ReminderSettingsComponent() {
   const { user, userData } = useAuth();
   const [settings, setSettings] = useState<ReminderSettings>({
     enabled: true,
