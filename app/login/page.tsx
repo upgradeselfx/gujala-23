@@ -595,7 +595,7 @@ export default function LoginPage() {
                   border: '1px solid rgba(200,0,0,0.3)' 
                 }}>
                   <AlertCircle size={14} />
-                  ⛔ Akun diblokir sementara. Coba lagi setelah 1 menit.
+                  Akun diblokir sementara. Coba lagi setelah 1 menit.
                 </div>
               )}
 
@@ -632,7 +632,7 @@ export default function LoginPage() {
                     </>
                   ) : (
                     <>
-                      <Zap size={18} />
+                     
                       Login
                     </>
                   )}
