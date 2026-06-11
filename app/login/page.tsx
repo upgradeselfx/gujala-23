@@ -633,7 +633,7 @@ export default function LoginPage() {
                   ) : (
                     <>
                       <Zap size={18} />
-                      Login ke GUJALA 23
+                      Login
                     </>
                   )}
                 </span>
@@ -644,7 +644,7 @@ export default function LoginPage() {
                   href="/register" 
                   style={{ fontSize: '14px', color: '#f87171', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', textDecoration: 'none' }}
                 >
-                  <Swords size={14} />
+                  
                   Belum punya akun? Daftar
                 </Link>
                 <Link 
